@@ -1,0 +1,161 @@
+---
+title: "Lab 3: Descriptive Statistics"
+author: "Brendan Dishion"
+date: 2024-02-14
+date-format: "[Due] FEB 14, 2024"
+format: 
+  html:
+    embed-resources: true
+    code-tools: true
+    code-summary: "Code"
+
+---
+
+## A. Weather Forecast Data
+
+1.  For this lab, we'll be using data on weather forecasts gathered by student at Saint Louis University. You can read about the dataset [here](https://github.com/rfordatascience/tidytuesday/tree/master/data/2022/2022-12-20). Download the weather forecasts data using the following code:
+
+```{r, message = F}
+setwd("C:/Users/bdish/OneDrive/Documents/Math167R/data")
+weather_forecasts <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-12-20/weather_forecasts.csv')
+write.csv(weather_forecasts, "weather_forecasts.csv")
+```
+
+2.  How many rows are in this dataset? How many columns?
+
+```{r}
+nrow(weather_forecasts)
+ncol(weather_forecasts)
+```
+
+<!--# YOUR ANSWER/EXPLANATION HERE -->
+
+3.  How many cities are represented in this dataset?
+
+```{r}
+cleaned_cities <- unique(weather_forecasts$city, na.rm = T)
+length(cleaned_cities)
+```
+
+<!--# YOUR ANSWER/EXPLANATION HERE -->
+
+4.  Create a new data frame containing only the forecasts for San Jose. You may have to explore the values for the `city` variable.
+
+```{r, message = F}
+library(dplyr)
+sj_fcs <- weather_forecasts |> 
+  filter(city == "SAN_JOSE") |> 
+  select(forecast_hours_before, forecast_temp, 
+  forecast_outlook) 
+df_sj <- as.data.frame(sj_fcs, na.rm = T)
+head(df_sj, n = 20)
+```
+
+<!--# YOUR ANSWER/EXPLANATION HERE -->
+
+5. Compute the mean absolute error between `observed_temp` and `forecast_temp` for San Jose.
+
+```{r}
+
+library(dplyr)
+
+sj_ot_ft <- weather_forecasts |> 
+  filter(city == "SAN_JOSE") |>
+  mutate(abs_error = abs(observed_temp - forecast_temp))
+
+mean(sj_ot_ft$abs_error, na.rm = T)
+
+```
+
+<!--# YOUR ANSWER/EXPLANATION HERE -->
+
+6. Compute the mean absolute error between `observed_temp` and `forecast_temp` for San Jose using only forecasts made 48 hours in advance.
+
+```{r}
+# YOUR CODE HERE
+library(dplyr)
+sj_ot_ft_48 <- weather_forecasts |> 
+  filter(city == "SAN_JOSE", forecast_hours_before == 48) |>
+  mutate(abs_error_48 = abs(observed_temp - forecast_temp))
+
+mean(sj_ot_ft_48$abs_error_48, na.rm = T)
+  
+```
+
+<!--# YOUR ANSWER/EXPLANATION HERE -->
+
+7. Compute the mean absolute error between `observed_temp` and `forecast_temp` for San Jose using only forecasts made 12 hours in advance.
+
+```{r}
+library(dplyr)
+sj_ot_ft_12 <- weather_forecasts |> 
+  filter(city == "SAN_JOSE", forecast_hours_before == 12) |>
+  mutate(abs_error_12 = abs(observed_temp - forecast_temp))
+
+mean(sj_ot_ft_12$abs_error_12, na.rm = T)
+```
+
+<!--# YOUR ANSWER/EXPLANATION HERE -->
+
+8. Compare your answers to 6 and 7. What do you notice? How does this compare to your expectation?
+
+  Comparing answers for 6 and 7, we can see that the means abs. error for San Jose using forecasts made 12 hours in advanced (#6)     was lower than the mean abs. error for SJ using forecasts made 48hrs in advance. This means that there were more accurate results   when the observed_temp was compared to the forecast_temp using forecasts only made 12 hours in advance. This makes sense since      meteorologists would most likely have greater success finding the actual temperature of a specific day the closer that they are to   that date/time. Having a higher mean abs. error means there was more difference between the observed_temp and forecast_temp,        which in hand means less successful predictions.
+
+<!--# YOUR ANSWER/EXPLANATION HERE -->
+
+9. Pick two cities in this dataset. Investigate whether the forecast accuracy is better for one city than for the other, using an appropriate statistic. Discuss your findings.
+
+<!--# YOUR ANSWER/EXPLANATION HERE -->
+```{r}
+library(dplyr)
+alb_ot_ft_24 <- weather_forecasts |> 
+  filter(city == "ALBANY", forecast_hours_before == 24) |>
+  mutate(abs_error_24 = abs(observed_temp - forecast_temp))
+
+mean(alb_ot_ft_24$abs_error_24, na.rm = T)
+
+cle_ot_ft_24 <- weather_forecasts |> 
+  filter(city == "CLEVELAND", forecast_hours_before == 24) |>
+  mutate(abs_error_24 = abs(observed_temp - forecast_temp))
+
+mean(cle_ot_ft_24$abs_error_24, na.rm = T)
+```
+
+  Using the code snippet above, I found the mean abs. error between the observed_temp and the forecast_temp between the cities of     Cleveland (Ohio) and Albany (NY). The first number 2.277523 displayed is the mean abs. error for Albany. The second number          2.107798 is the mean abs. error for Cleveland. The average difference between the observed_temp and the forecast_temp was lower     for the city of Cleveland, so we can conclude that that the forecast accuracy is more accurate in Cleveland than the city of        Albany.
+
+## B. Find your own data
+
+For this component, pick a [Tidy Tuesday dataset](https://github.com/rfordatascience/tidytuesday/tree/master/data/2023) and complete the following activity.
+
+10. Provide a brief description of your dataset. Identify at least two questions you could try to answer using this dataset.
+
+  The dataset that I chose represents the sales data for the Diwali festival. It gives data such as age, gender, location,            occupation of people who purchased items from retail stores during the Diwali festival period in India. The first question that     comes to mind is what is the average amount of a transaction during the Diwali festival in India. Another question that can be      answered is what regions/cities spent the most on supplies for the festival. 
+<!--# YOUR ANSWER/EXPLANATION HERE -->
+
+11. Open your dataset in R and compute one or more descriptive statistics that shed light on your questions. Discuss your findings.
+
+```{r, message = F}
+setwd("C:/Users/bdish/OneDrive/Documents/Math167R/data")
+diwali_sales <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-11-14/diwali_sales_data.csv')
+write.csv(diwali_sales, "diwali_sales_data.csv")
+```
+
+```{r}
+sales_column <- diwali_sales$Amount
+mean(sales_column, na.rm = T)
+```
+
+```{r}
+diwali_sales |>
+  group_by(State) |>
+  summarize(top_state_spender = sum(Amount, na.rm = TRUE)) |>
+  ungroup() |> arrange(desc(top_state_spender))
+```
+
+  Based on the following code snippets, we can see that after loading the dataset, in the second code snippet I write the code to     find the average price of a transaction from the amount column. We can see that the average amount spent on each transaction was    roughly 9453 (assuming currency is Rupee). In the 3rd code segment, I am simply grouping the dataset by the Sales column, and then   summarizing a variable which sums the total amount spent on each transaction based on a particular state. Simly, it's just summing   the total amount spent per state. The final part of the code rearranges the data to assorted in descending order, so we can see     what states spent the most first. 
+<!--# YOUR ANSWER/EXPLANATION HERE -->
+
+12. Are there any limitations of your analysis? Could additional data or more complicated methods improve your analysis? Discuss.
+
+  The limitations of my analysis include outliers, as the amount spent across different categories can vary significantly. Another    issue that could arise from my analysis is the lack of factors that I did not include which can influence the result of the data.   I believe that this dataset has enough data to make conclusions based on factors such as demographics, name, age group and the use   of more complicated methods involving these factors/influences would help improve my analysis. It would provide a deeper insight    into total spending across different age groups and regions, along with the categories where most/least spending occurred.
+<!--# YOUR ANSWER/EXPLANATION HERE -->
