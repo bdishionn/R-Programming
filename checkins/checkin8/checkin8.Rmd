@@ -1,0 +1,62 @@
+---
+title: "Check-in 8"
+author: "Brendan Dishion"
+format: 
+  html:
+    embed-resources: true
+    code-tools: true
+    code-summary: "Code"
+---
+
+1. Download and read the documentation for the [Childcare Costs data](https://github.com/rfordatascience/tidytuesday/blob/master/data/2023/2023-05-09/readme.md).
+
+```{r, message = F}
+childcare_costs <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-05-09/childcare_costs.csv')
+counties <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-05-09/counties.csv')
+```
+
+2. Use visualization and regression to explore the following question: Is there a relationship between a county's average childcare costs and its median household income? There will be more than one way to answer this question--the important thing is to **explain** the choices you make in your analysis.
+
+```{r, message = F, warning = FALSE}
+library(dplyr)
+library(ggplot2)
+library(readr)
+
+# computing the average childcare cost per county
+childcare_costs <- childcare_costs %>%
+  mutate(avg_cost_per_county = rowMeans(select(., starts_with("mfcc"), 
+  starts_with("mc")), na.rm = TRUE))
+
+# merging childcare costs with counties data by county flips code
+combined_data <- left_join(childcare_costs, counties, by = "county_fips_code")
+
+# linear regression model exploring relationship
+lm_model <- lm(avg_cost_per_county ~ mhi_2018, data = combined_data)
+summary(lm_model)
+
+# relationship plot
+ggplot(combined_data, aes(x = mhi_2018, y = avg_cost_per_county)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "red") +
+  labs(x = "Median Household Income ($)", 
+       y = "Average Childcare Costs per County ($)",
+       title = "Relationship for Childcare Costs and Median Household Income")
+```
+
+Is there a relationship between a county's average childcare costs and its median household income?
+
+Based on the plot above, the spread of the data points becomes wider as the median household income increases, which suggests that there may be more variability in childcare costs in wealthier counties.
+
+Based on the summary of the linear model, the estimate of the intercept coefficient is approx. 33.89, with a very small p-value (practically 0). The coefficient for the median household income (mhi_2018) is approx 0.001599 with a p-value that is essentially 0. The coefficient for the median household income suggests that for every dollar increase in the median household income, the avg. childcare cost per county increases by approximately 0.1599 cents. This implies that the avg. childcare costs is the dependent variable, and the median household income is the independent variable.
+
+The residual standard error is 26.73, meaning that on average, the observed childcare costs deviate from the regression line in the plot by approximately $26.73. The range of the min and max residuals, -113.879 to 179.016 suggests there are some large deviations or outliers.
+
+The R-Squared value of 0.3915 means that approx. 39.15% of the variability in avg. childcare costs per county can be explained by the median household income. This value of approx 39% suggests that there is over 60% variability that is explained by other factors in the data set. The F-statistic, 1.52e+04 with a p-value less than 2.2e-16 tells us that the linear model is significant, meaning that there's a low probability that the observed relationship between childcare costs and median household income is due to randomness. 
+
+With these test statistics in mind, because the F-statistic is a measure of the significance of the regression model, with a F-statistic value of 15,200 and a p-value less than 2.2e-16, the model is statistically significant. Although the model isn't a perfect fit based on the R-squared value of 39.15 and over 60% of the variance is explained by other variables, it's still a significant amount to explain some sort of relationship between the two.
+
+
+
+
+
+

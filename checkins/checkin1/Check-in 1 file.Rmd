@@ -1,0 +1,35 @@
+---
+title: "Check-in 1"
+author: "Brendan Dishion"
+date: "2024-01-29"
+output: html_document
+ormat: 
+  html:
+    embed-resources: true
+    code-tools: true
+    code-summary: "Code"
+---
+
+1.  This is a code chunk that opens the `mtcars` dataset, which contains information about on 32 cars from a 1974 issue of the magazine *Motor Trend* and creates a scatter plot with horsepower `hp` on the x-axis and miles-per-gallon `mpg` on the y-axis. Try running this code and Rendering/Knitting your Rmd document. If you have done this correctly, RStudio should produce an html document.
+
+```{r, eval = T}
+data(mtcars)
+plot(mtcars$hp, mtcars$mpg)
+```
+
+2.  Using this scatter plot, describe the relationship between `mpg` and `hp`.
+ 
+    After reviewing the scatter plot, from the data we can conclude that
+    cars with fewer horsepower tend to get better mpg than cars with 
+    a higher horsepower. This makes sense since vehicles with more horsepower
+    require mores gas for the engine to run optimally. From the data
+    we can safely conclude that cars between 50-100 hp get the best mileage while
+    cars with 200-300hp generally get the worst gas mileage, but will be much faster.
+
+
+3.  Create your own code chunk below this question containing the line of code `print("Hello MATH167R!")`. Then Render/Knit your Rmd document. If you have done this correctly, RStudio should produce an html document.
+
+```{r, eval = T}
+print("Hello MATH167R!")
+```
+

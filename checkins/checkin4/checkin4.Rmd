@@ -1,0 +1,63 @@
+---
+title: "Check-in 4"
+author: "Brendan Dishion"
+format: 
+  html:
+    embed-resources: true
+    code-tools: true
+    code-summary: "Code"
+---
+
+Remember, **follow the instructions below and use R Markdown to create a pdf document with your code and answers to the following questions on Gradescope.** You may find a template file by clicking "Code" in the top right corner of this page.
+
+1. The hard-threshold function is defined as
+
+$$f_\lambda(x) =\begin{cases}
+x & |x|\geq \lambda\\
+0 & |x|<\lambda
+\end{cases}$$
+
+Write an R function that takes two arguments as input: a numeric input `x` and a threshold `lambda`. Your function should return the value of $f_\lambda(x)$ and work for vector input `x` of any length.
+
+```{r, message = F}
+hard_threshold <- function(x, lambda) {
+  
+  vector_results <- length(x)
+  
+  for (i in 1:length(x)) {
+    abs_value <- abs(x[i])
+    
+    if (abs_value >= lambda) {
+      vector_results[i] <- x[i]
+    
+    } else if (abs_value < lambda) {
+      vector_results[i] <- 0
+    }
+  }
+  return(vector_results)
+}
+```
+
+The code above uses a for loop to loop through the length of the numeric value we pass in as input, then it checks if the absolute value at each index in the input is greater than or equal to lambda. There is also another case for the absolute value at the index being less than the value of lambda. If the abs value at the index in our input is greater than or equal to the lambda input, we simply print the original value, otherwise if the abs value at the index is less than lambda, we replace these numbers with 0.
+
+2. For $\lambda=4$, demonstrate your function on the vector c(-5, -3, 0, 3, 5).
+
+```{r, message = F}
+x <- c(-5, -3, 0, 3, 5)
+lambda <- 4
+hard_threshold(x, lambda)
+```
+
+The absolute value of the first index, -5 is 5. Since 5 > 4. We print back the original value of x, which is -5. For the indices 2-4, the absolute value of each index is less than lambda, so we print zero for these indices in the vector.The absolute value of the 5th index, 5, is simply 5. We can print back 5 as the last value since it's greater than lambda.
+
+(Hint: the output should be the vector `-5, 0, 0, 0, 5`)
+
+3. For $\lambda=2$,  demonstrate your function on the vector c(-7, -5, -3, 0, 3, 5, 7).
+
+```{r, message = F}
+x <- c(-7, -5, -3, 0, 3, 5, 7)
+lambda <- 2
+hard_threshold(x, lambda)
+```
+
+The same logic applies to this problem as it did in the last problem. This time, since only one of the absolute values at any of the indices in the vector is less than the value of lambda, we know that the rest of the vector can remain the same. When investigating the value that is less than lambda, we can see that it's simply the value 0. In this case, 0 will always be 0, so the entire vector will remain the same after calling the function upon it.

@@ -1,0 +1,92 @@
+---
+title: "Check-in 2"
+author: "Brendan Dishion"
+date: ""
+format: 
+  html:
+    embed-resources: true
+    code-tools: true
+    code-summary: "Code"
+---
+
+Remember, **follow the instructions below and use R Markdown to create a pdf document with your code and answers to the following questions on Gradescope.** You may find a template file by clicking "Code" in the top right corner of this page.
+
+### Collaborators
+
+INSERT NAMES OF ANY COLLABORATORS
+
+https://www.geeksforgeeks.org/how-to-get-the-structure-of-a-given-dataframe-in-r/
+
+https://www.rdocumentation.org/packages/base/versions/3.6.2/topics/factor
+
+## A. Flights Data
+
+**1.**  For this lab, we'll be using the `flights` data. You can load this data using the following code:
+
+```{r}
+library(nycflights13)
+data(flights)
+```
+
+**2.** Use the `mutate()` function to turn `origin` into a factor.
+
+```{r, message = F}
+library(dplyr)
+
+flights <- flights |>
+  mutate(origin = as.factor(origin))
+head(flights$origin, n = 15)
+str(flights$origin)
+```
+Using the command str() we can see the structure of the origins column, which is now a factor. 
+
+**3.** Compute the mean `arr_delay` for each origin airport. Which airport has the longest delays on average? You can drop missing rows.
+
+```{r}
+flights |> 
+  group_by(origin) |>
+  summarize(avg_arr_delay = mean(arr_delay, na.rm = TRUE)) |>
+  ungroup() |> arrange(desc(avg_arr_delay))
+```
+
+We can see that the airport with the longest delays on average is EWR (Newark Liberty International Airport).
+<!--# YOUR ANSWER/EXPLANATION HERE -->
+
+
+**4.** Use the `mutate()` function to turn `month` into a factor.
+
+```{r}
+library(dplyr)
+
+flights <- flights |>
+  mutate(month = as.factor(month))
+head(flights$month, n = 15)
+str(flights$month)
+```
+Using the command str() we can see the structure of the months column, which is now a factor. 
+<!--# YOUR ANSWER/EXPLANATION HERE -->
+
+
+**5.** Compute the mean `arr_delay` by month. What do you notice?
+
+```{r, message = F}
+flights |> 
+  group_by(month) |>
+  summarize(avg_arr_delay = mean(arr_delay, na.rm = TRUE)) |>
+  ungroup() |> arrange(desc(avg_arr_delay))
+```
+
+After computing the mean arr_delay, we notice that July is the month with the most delay on average, while September is the month with the least amount of arrival delay. It should be noted that September actually has a negative reading, so the arrival time in this month is on average faster than what airports predict. Close to July are June and December. This makes sense since many people travel during the Summer and many people also travel during the holidays in December.  
+<!--# YOUR ANSWER/EXPLANATION HERE -->
+
+
+**6.** Compute the mean `arr_delay` by month AND `origin`. What do you notice?
+
+```{r, message = F}
+flights |> 
+  group_by(month, origin) |>
+  summarize(avg_arr_delay = mean(arr_delay, na.rm = TRUE)) |>
+  ungroup() |> arrange(desc(avg_arr_delay))
+```
+What we notice is the JFK in July is the airport that experiences the worst average arrival delays. Followed by this is EWR is December. Surprisingly, JFK in December experiences pretty short average arrival delays.
+<!--# YOUR ANSWER/EXPLANATION HERE -->
