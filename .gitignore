@@ -1,0 +1,15 @@
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+data/cook_county_residential_data.csv
+*.html
+*.pdf
+*.png
+*.csv
+*.ini
+*.rmarkdown
+*.log
+*.zip
+*.tar.gz
+*.aux
