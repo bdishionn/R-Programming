@@ -1,0 +1,32 @@
+---
+title: "Exercise: Data Visualization"
+author: "Brendan Dishion"
+date: ""
+format: 
+  html:
+    embed-resources: true
+    code-tools: true
+    code-summary: "Code"
+---
+
+```{r}
+library(tidyverse)
+jan1_pm_2_5 <- pm_2_5 |> filter(Date == "2023-01-01")
+hist(jan1_pm_2_5$`Daily Mean PM2.5 Concentration`,
+     main = "Jan 1",  xlab = "PM 2.5")
+```
+
+
+```{r}    
+oct19_pm_2_5 <- pm_2_5 |> filter(Date == "2023-09-19")
+hist(oct19_pm_2_5$`Daily Mean PM2.5 Concentration`,
+     main = "October 19", xlab = "PM 2.5")
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = CA_sf) +
+  geom_sf(data = oct19_pm_2_5, 
+          mapping = aes(color = DAILY_AQI_VALUE)) +
+  scale_color_viridis_c()
+```

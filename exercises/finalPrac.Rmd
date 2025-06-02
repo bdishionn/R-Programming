@@ -1,0 +1,44 @@
+```{r}
+mystery <- function(x) {
+  if (x == 1) {
+    return(x ^ 2)
+    } else {
+      return(x ^ 2 + mystery(x - 1))
+    }
+  }
+mystery(4)
+
+mystery2 <- function(x) {
+  sum <- 0
+  for (i in 1:x) {
+    sum <- sum + i^2
+  }
+  return(sum)
+}
+ mystery2(4)
+ 
+ 
+"hello" |> print()
+x <- "hello" |> print()
+print("hello")
+
+```
+
+```{r}
+
+dat <- data.frame(time = c(6, 7, 8, 6, 7, 8),
+temp = c(54, 57, 59, 40, 41, 42),
+mth = c(rep("October", 3), rep("December", 3)))
+
+
+run_one_sim <- function(n) {
+X <- rexp(n)
+return(abs(mean(X) - 1) < 1.96 * sd(X) / sqrt(n))
+}
+
+set.seed(123)
+sim_results_20 <- replicate(10000, run_one_sim(20))
+print(mean(sim_results_20))
+## [1] 0.9085
+
+```

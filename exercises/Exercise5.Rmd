@@ -1,0 +1,28 @@
+```{r, message = F}
+
+a <- 1
+b <- 2
+c <- 4
+
+
+function_Sum <- function(a, b, c) {
+  return(a + b + c)
+}
+
+
+function_Sum(a, b, c)
+
+```
+
+```{r, message = F}
+
+a <- -10
+
+function_Abs <- function(a) {
+  return(abs(a))
+}
+
+function_Abs(a)
+
+
+```

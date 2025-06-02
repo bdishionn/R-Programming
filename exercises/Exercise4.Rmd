@@ -1,0 +1,17 @@
+
+
+```{r, message = F}
+
+x <- c(1, 5)
+y <- c(2, 2)
+if(sum(x) > sum(y)) {
+  print("Sum of X is bigger")
+  
+}
+
+if(sum(y) > sum(x)){
+  print("Sum of Y is bigger")
+}
+
+
+```

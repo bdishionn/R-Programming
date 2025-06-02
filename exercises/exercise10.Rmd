@@ -1,0 +1,18 @@
+```{r, message = F}
+library(moderndive)
+data(pennies_sample)
+head(pennies_sample)
+
+library(tidyverse)
+ggplot(pennies_sample, aes(x = year)) +
+  geom_histogram(binwidth = 10, color = "white") +
+  theme_minimal()
+
+x_bar <- pennies_sample |>
+  summarize(mean_year = mean(year))
+x_bar
+
+mean(pennies_sample$year) +
+  1.96 * sd((pennies_sample$year) / sqrt(50)) -
+  1.96 * sd((pennies_sample$year) / sqrt(50))
+```

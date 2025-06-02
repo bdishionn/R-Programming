@@ -1,0 +1,4 @@
+```{r}
+randomize <- function(f) f(runif(1000))
+randomize(mean)
+```

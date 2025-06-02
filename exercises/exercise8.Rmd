@@ -1,0 +1,16 @@
+```{r}
+take_step <- function() {
+  return(sample(c(1, -1), 1))
+}
+walk_randomly <- function(n_steps, start = 0) {
+  if (n_steps <= 1) {
+    return(start)
+  }
+  x <- c(start, 
+         walk_randomly(n_steps - 1, start + take_step()))
+  return(x)
+}
+
+set.seed(12)
+mean(max(abs(replicate(10000, sum(walk_randomly(12) >= 0) - 1))))
+```

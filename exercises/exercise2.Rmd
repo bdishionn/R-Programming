@@ -1,0 +1,25 @@
+---
+title: "Exercise: Data Visualization"
+author: "Brendan Dishion"
+date: ""
+format: 
+  html:
+    embed-resources: true
+    code-tools: true
+    code-summary: "Code"
+---
+
+```{r}
+
+pm_2_5 <- readr::read_csv("https://math167r-s24.github.io/static/CA_PM2_5_2023.csv")
+
+
+summary(pm_2_5)
+
+col = pm_2_5$DAILY_AQI_VALUE
+  print(max(col))
+  
+
+
+
+```
