@@ -1,0 +1,196 @@
+---
+title: "Lab 6"
+author: "Brendan Dishion"
+format: 
+  html:
+    embed-resources: true
+    code-tools: true
+    code-summary: "Code"
+---
+
+Remember, **follow the instructions below and use R Markdown to create a pdf document with your code and answers to the following questions on Gradescope.** You may find a template file by clicking "Code" in the top right corner of this page.
+
+## A. Basic functions
+
+```{r, message = F, warning = F}
+library(nycflights13)
+```
+
+Use the following code to create a list of four matrices:
+
+```{r, echo = T, eval = T}
+set.seed(100)
+matrix_list <- list(
+  A = diag(5),
+  B = matrix(rnorm(9), nrow = 3, ncol = 3),
+  C = matrix(c(1, 2, 3, 4), nrow = 2, ncol = 2),
+  D = diag(c(1:5))
+)
+```
+
+1. Use the `lapply` function to create a list of length four containing the inverse of these four matrices.
+
+```{r}
+inverse_matrices <- lapply(matrix_list, solve)
+inverse_matrices
+```
+
+2. Use the `sapply` function to create a vector of length four containing the determinants of these four matrices.
+
+```{r}
+determinants <- sapply(matrix_list, det)
+determinants
+```
+
+## B. Skewness and Kurtosis
+
+Skewness describes how asymmetrical the distribution of a numerical variable is around its mean. Given observations $x_1,\ldots, x_n$, we can calculate the sample skewness $s$ of a variable using the following formula:
+
+$$s = \frac{\frac{1}{n}\sum\limits_{i=1}^n(x_i-\overline{x})^3}{\left[\frac{1}{n}\sum\limits_{i=1}^n(x_i-\overline{x})^2\right]^{3/2}}$$
+Kurtosis is a measure of the "tailedness" of the distribution of a numerical variable is around its mean. Higher values of kurtosis indicate more extreme outliers. Given observations $x_1,\ldots, x_n$, we can calculate the sample kurtosis $k$ of a variable using the following formula:
+
+$$k = \frac{\frac{1}{n}\sum\limits_{i=1}^n(x_i-\overline{x})^4}{\left[\frac{1}{n}\sum\limits_{i=1}^n(x_i-\overline{x})^2\right]^{2}}-3$$
+Expected values of kurtosis() and skewness():
+```{r, message = F, warning = F}
+library(e1071)
+b <- flights$arr_delay
+b <- na.omit(b) 
+kurtosis_value <- kurtosis(b)
+skew_val <- skewness(b)
+print(kurtosis_value) #expected kurtosis value
+print(skew_val) #expected skewness value
+```
+
+3. Write a function `skewness()` that takes as input a numeric vector `x` and returns the sample skewness. There are functions in R that compute skewness, but you cannot use any of them--write your own implementation. You may remove all `NA` values by default. Use your function to compute the sample skewness of the `arr_delay` variable in the `flights` dataset contained in the `nycflights13` package.
+
+```{r}
+skewness <- function(x) {
+  x <- na.omit(x) # Remove NA values first
+  n <- length(x)
+  mean_x <- mean(x)
+  
+  skewness_numerator <- sum((x - mean_x)^3) * 1/n
+  skewness_denom <- (sum((x - mean_x)^2) * 1/n)^(1.5)
+  
+  skew <- skewness_numerator / skewness_denom
+  return(skew)
+}
+
+x <- flights$arr_delay
+skewness(x)
+```
+
+4. Write a function `kurtosis()` that takes as input a numeric vector `x` and returns the sample skewness. There are functions in R that compute kurtosis, but you cannot use any of them--write your own implementation. You may remove all `NA` values by default. Use your function to compute the sample kurtosis of the `arr_delay` variable in the `flights` dataset contained in the `nycflights13` package.
+
+```{r}
+kurtosis <- function(x) {
+  x <- na.omit(x)
+  n <- length(x)
+  mean_x <- mean(x, na.rm = T)
+  
+  kurtosis_numerator <- (1/n * sum((x - mean_x)^4))
+  kurtosis_denom <- ((1/n * sum((x - mean_x)^2))^2) 
+  kur <- kurtosis_numerator / kurtosis_denom - 3
+  
+  return(kur)
+}
+
+x <- flights$arr_delay
+kurtosis(x)
+```
+
+5. Write a function `get_column_skewness()` that takes as input a data frame and calculates the skewness of each **numeric** variable. The output should be a data frame with two variables: `variable` containing the name of the variable and `skewness` containing the skewness. Your output data frame should only include the numeric variables. You may remove all `NA` values by default. Demonstrate your function on the `penguins` dataset.
+
+```{r}
+get_column_skewness <- function(df) {
+  results <- data.frame(var = character(), skew = numeric(), stringsAsFactors = F)
+  
+  for(column in names(df)) {
+    if(is.numeric(df[[column]])) {
+      column_skewness <- skewness(df[[column]])
+      results <- rbind(results, data.frame(var = column, skew = column_skewness, stringsAsFactors = F))
+    }
+  }
+  return(results)
+}
+library(palmerpenguins)
+get_column_skewness(penguins)
+```
+
+## C. Finding an error
+
+Suppose you have two teams of runners participating in a 5k. We wish to write a function that takes as input two vectors representing the times of the runners in each team and returns a list of two vectors representing the ranks of each team's runners.
+
+For example, if the first team's times are `c(16.8, 21.2, 19.1)` and the second team's times are `c(17.2, 18.1, 20.0)`, the function should return `c(1, 6, 4)` for the first team and `c(2, 3, 5)` for the second team. 
+
+Below is a draft version of the function `get_runner_ranks()`. However, there is an error somewhere. Use any method we discussed in class to identify the error.
+
+```{r, error = T, echo = T, eval = T}
+get_runner_ranks <- function(x, y) {
+  # combine all runner times
+  combined_times <- c(x, y) 
+  
+  # sort all runner times from fastest to slowest
+  sort(combined_times, decreasing = T)
+  # FIRST ERROR : decreasing = T means we are sorting from slowest to fastest when
+  # we actually need to sort from fastest to slowest
+
+  # create ranks vectors
+  ranks_x <- numeric(length(x))
+  ranks_y <- numeric(length(y))
+  
+  for (i in seq_along(ranks_x)) {
+    # look up rank of time i in x in combined_times
+    ranks_x[i] <- match(x[i], combined_times)
+    
+    # SECOND ERROR : match() incorrectly handles ties and rank assignments because 
+    # it's only looking for the first match in the sorted list.
+  }
+  
+  for (i in seq_along(ranks_y)) {
+    # look up rank of time i in y in combined_times
+    ranks_y[i] <- match(y[i], combined_times)
+    
+    # SECOND ERROR : match() incorrectly handles ties and rank assignments because 
+    # it's only looking for the first match in the sorted list.
+  }
+  
+  # return a list of first team and second team ranks
+  return(list(x = ranks_x, y = ranks_y))
+}
+x <- c(16.8, 21.2, 19.1)
+y <- c(17.2, 18.1, 20.0)
+get_runner_ranks(x, y)
+```
+
+6. Explain in your own words what the error was.
+
+The error occurs in the match function, which is intended to return the index of the first match found. This is not how rankings work, particularly when there are ties. Also, there is another error which causes an issue,`sort(combined_times, decreasing = T)`. The error is caused by decreasing = TRUE, which would mean we are ranking from slowest to fastest time, when we actually want to rank from fastest to slowest time.
+
+In order to find the bug, it was important that I had an understanding of how rankings work in the context of racing and also how the match() function works. The `match(x, table)` functions helps with finding the first occurrence of elements in `x` within `table` and returns their positions. The first limitation occurs because match() could not handle ties. Suppose 2 runners tied, match() would assign different ranks based on the order in `table`.
+
+The output of the bugged code suggest that the runners time were ranked independently and did not properly rank the runners based on their time.Using the locate method to find the bug, it was clear that match() had to be replaced with a more suitable function like `rank()`, which automatically ranks and handles ties. In order to find the bug, the method that I used was Step 4, simply trying to locate the bug.
+
+7. Below, write a corrected version of `get_runner_ranks()` and compute `get_runner_ranks(c(16.8, 21.2, 19.1), c(17.2, 18.1, 20.0))`.
+
+```{r, error = T, echo = T, eval = T}
+get_runner_ranks <- function(x, y) {
+  # combine all runner times
+  combined_times <- c(x, y) 
+  
+  combined_ranks <- rank(combined_times)
+  
+  ranks_x <- combined_ranks[seq_along(x)]
+  ranks_y <- combined_ranks[(length(x) + 1):(length(x) + length(y))]
+  
+  # return a list of first team and second team ranks
+  return(list(x = ranks_x, y = ranks_y))
+}
+x <- c(16.8, 21.2, 19.1)
+y <- c(17.2, 18.1, 20.0)
+get_runner_ranks(x, y)
+```
+
+In the new code, we replace `match()` with `rank()` and we also update our vector ranks.The line ranks_x `ranks_x <- combined_ranks[seq_along(x)]` extracts the rank for elements in vector x from a `combined_rank` vector, containing all combined elements from x and y. `ranks_x` will now have the ranks for team X based on the combined ranking with y.
+
+The line `ranks_y <- combined_ranks[(length(x) + 1):(length(x) + length(y))]` extracts ranks for elements in vector y from a `combined_rank` vector, containing all combined elements from x and y. Finally `ranks_y` will contain ranks for runners from team Y, based on the combined teams x and y.

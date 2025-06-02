@@ -1,0 +1,118 @@
+---
+title: "Lab 2: R Markdown and Basic Objects"
+author: "Brendan Dishion"
+
+format: 
+  html:
+    embed-resources: true
+    code-tools: true
+    code-summary: "Code"
+
+---
+External resources used: "How to Use na.omit in R?" (geeksforgeeks)
+
+## A. File paths and Introduction to R Markdown
+
+1. Create a `MATH167R` directory somewhere on your computer that will contain all your work for this class. Within the `MATH167R` folder, create subdirectories for `labs`, `checkins`, and `data`. Save this .Rmd document in your `labs` folder and then Render/Knit your Rmd document. The following code chunk should print the location of your Rmd. document:
+
+```{r, eval = T}
+getwd()
+```
+
+2. In the console, run the command `getwd()`. What is the output? If it is different from your answer to Question 1, why? Explain, in your own words, what the working directory is.
+
+  My output: "C:/Users/bdish/OneDrive/Documents"
+
+  To describe in my own words, the working directory or WD is the current directory in which you are located within    R, and is where files are stored/retrieved by default. By running the command getwd(), it tells you the exact        directory that you are working in in RStudio. The back slashes in the output represent the file path taken to the    working directory. Our answer for the working directory varies from question 1 simply because we are asking for the   working directory from the console, not from the location of the knitted .rmd document. When we are running the      getwd() for this question, we are running it within the console and identifying the working directory of the         console.
+
+3. Every time you Render/Knit your Rmd document, **all** of the code is run in a **new** R session. Any code run in the interactive session **does not affect** your rendered html file. Create a code chunk below that sets the value of `x` to be your favorite number and then uses `print(x)` to print it out.
+
+```{r, eval = T}
+x <- 4
+print(x)
+```
+
+4. Download [this dataset](https://www.openintro.org/data/csv/cars.csv) to your `data` folder, then use a code chunk with the code `cars <- read.csv("YOUR PATH HERE")` to open the file. You will need to replace the text `YOUR PATH HERE` with the correct location of the dataset to open this successfully.
+
+```{r, eval = T}
+setwd("C:/Users/bdish/OneDrive/Documents/Math167R/data")
+cars <- read.csv("cars.csv")
+as.data.frame(cars)
+```
+
+
+5. Run the code `head(cars)` in a code chunk to display the first few rows of this dataset.
+
+<!-- REPLACE THIS LINE WITH YOUR ANSWER -->
+
+```{r, eval = T}
+setwd("C:/Users/bdish/OneDrive/Documents/Math167R/data")
+cars <- read.csv("cars.csv")
+head(cars)
+```
+
+## B. Vectors and Matrices
+
+6. Write a line of code to generate a vector of length 100 whose entries are 1, 2, ..., 100.
+
+```{r, eval = T}
+vect <- c(1:100)
+print(vect)
+```
+
+7. Write a line of code to generate the following matrix:
+
+`1 2 3`
+
+`4 5 6`
+
+`7 8 9`
+
+```{r, eval = T}
+matrx1 <- matrix(1:9, ncol = 3, nrow = 3, byrow = T)
+print(matrx1)
+```
+
+## C. Working with Data Frames
+
+Use the following code to load the `penguins` data.
+
+```{r, eval = T}
+# load palmer penguins package
+library(palmerpenguins)
+
+# open penguins data as a data frame
+data(penguins)
+penguins <- as.data.frame(penguins)
+```
+
+8. Using the `mean()` function, compute the mean body mass of penguins in the dataset, dropping any missing values.
+
+```{r, eval = T}
+pen_mass <- mean(penguins$body_mass_g, na.rm = TRUE)
+print(pen_mass)
+```
+
+<!-- REPLACE THIS LINE WITH YOUR ANSWER -->
+
+
+9. Using the `max` function, compute the maximum flipper length of penguins in the dataset, dropping any missing values.
+
+```{r, eval = T}
+flip_len <- max(penguins$flipper_length_mm, na.rm = TRUE)
+print(flip_len)
+```
+
+<!-- REPLACE THIS LINE WITH YOUR ANSWER -->
+
+10. Using the `hist` function, create a histogram of the ratio of the penguins' bill length to bill depth, dropping any missing values. What is the shape of the resulting distribution?
+
+```{r, eval = T}
+len_clean <- na.omit(penguins$bill_length_mm) #dropping missing values
+dep_clean <- na.omit(penguins$bill_depth_mm) #dropping missing values
+bill_ratio <- (len_clean / dep_clean)
+hist(bill_ratio)
+```
+
+<!-- REPLACE THIS LINE WITH YOUR ANSWER -->
+The resulting shape of the distribution is somewhat irregular and looks almost like a "w". The distribution increases for the first three bars, then decreases for one bar after that. After this, it increases again before decreasing, only to increase once again. It's safe to say this distribution is pretty scattered, as there are a high number of frequencies on the lower and higher end of the ratio, however the frequency tails off in the middle points. The very end points of the start and end of the histogram are outliers, and have very low frequency. 

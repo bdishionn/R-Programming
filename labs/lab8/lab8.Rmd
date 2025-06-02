@@ -1,0 +1,421 @@
+---
+title: "Lab 8"
+author: "Brendan Dishion"
+format: 
+  html:
+    embed-resources: true
+    code-tools: true
+    code-summary: "Code"
+---
+
+Remember, **follow the instructions below and use R Markdown to create a pdf document with your code and answers to the following questions on Gradescope.** You may find a template file by clicking "Code" in the top right corner of this page.
+
+## A. Bootstrapping the sampling distribution of the median
+
+1. Using the `penguins` dataset in the `palmerpenguins` package, construct a confidence interval for the mean `body_mass_g` for female Adelie penguins based on using a normal distribution based on the central limit theorem. You should compute the confidence interval without using `confint()`.
+
+```{r, message = F}
+library(palmerpenguins)
+library(dplyr)
+
+data(penguins)
+
+female_adelie <- penguins |>
+  filter(species == "Adelie", sex == "female")
+
+female_mass_adelie <- na.omit(female_adelie$body_mass_g)
+
+# Calculating mean for body_mass_g 
+sample_mean <- mean(female_mass_adelie) 
+print(paste("Sample mean: ", sample_mean))
+
+# calculating standard error of mean
+sample_length <- length(female_mass_adelie)
+sample_sd <- sd(female_mass_adelie)
+standard_error <- sample_sd / sqrt(sample_length)
+
+# Z-score for 95% confidence level
+z_score <- qnorm(0.975)  # two-tailed (0.025 + 0.975 = 1)
+print(paste("Z-score:", z_score))
+
+# Margin of error
+margin_error <- z_score * standard_error
+
+# Calculate the confidence interval
+lower_bound <- sample_mean - margin_error
+upper_bound <- sample_mean + margin_error
+print(paste("95% Confidence Interval: [", lower_bound, ", ", upper_bound, "]"))
+```
+
+2. Construct a bootstrap confidence interval for the mean `body_mass_g` for female Adelie penguins using 10000 resamples.
+
+```{r, warning = F}
+library(boot)
+library(broom)
+
+# creating function to take a re-sample of the values
+boot_mean <- function(female_mass_adelie, resample_vector) {
+  mean(female_mass_adelie[resample_vector])
+}
+
+mean_results <- boot(female_mass_adelie, boot_mean, R = 10000)
+tidy(mean_results)
+
+boot.ci(mean_results)
+```
+
+3. Construct a bootstrap confidence interval for the median `body_mass_g` for female Adelie penguins using 10000 resamples.
+
+```{r, warning = F}
+library(boot)
+library(broom)
+
+# creating function to take a re-sample of the values
+boot_mean <- function(female_mass_adelie, resample_vector) {
+  median(female_mass_adelie[resample_vector])
+}
+
+mean_results <- boot(female_mass_adelie, boot_mean, R = 10000)
+tidy(mean_results)
+
+boot.ci(mean_results)
+```
+
+## B. Simulations
+
+4. Suppose that $Y\sim \mathrm{Poisson}(X)$ where $X\sim \mathrm{Exponential}(1)$. Use simulation to estimate $E(Y)$ and $\mathrm{Var}(Y)$.
+
+```{r}
+set.seed(200)
+
+# Generating 10000 random numbers from an Exponential distrib. w/ rate = 1
+X <- rexp(10000, rate = 1)
+Y <- rpois(10000, lambda = X)
+
+expected_val_Y <- mean(Y)
+expected_var_Y <- var(Y)
+
+cat("Estimated E(Y):", expected_val_Y, "\n")
+cat("Estimated Var(Y):", expected_var_Y, "\n")
+```
+
+5. For this question, you will write a simulation to test the frequentist coverage of a 95\% confidence interval for a proportion based on the normal approximation.
+
+    a. First, write a function that takes two inputs: `n` and `p`. Your function should randomly generate some $X\sim \mathrm{Binomial}(n, p)$, compute $\widehat{p}= X/n$, and then compute the corresponding normal distribution-based confidence interval for $p$ **based on your sample** $\widehat{p}$. Your function should return `TRUE` if $p$ is in the confidence interval. You may use the following formula for the confidence interval:
+    
+    $$\widehat{p}\pm z_{.975}\sqrt{\frac{\widehat{p}(1-\widehat{p})}{n}}$$
+    
+```{r}
+is_confidence_int <- function(n, p) {
+
+  # Generate single binomial random variable
+  X <- rbinom(1, size = n, prob = p)
+  
+  # Calculate Sample Proportion
+  p_hat <- X / n
+  
+  # Determine Z-Score for 95% conf.
+  z <- qnorm(0.975)
+  
+  # Standard error of sample proportion
+  standard_err <- sqrt(p_hat * (1 - p_hat) / n)
+  
+  upper_bounds <- p_hat + z * standard_err
+  lower_bounds <- p_hat - z * standard_err
+  
+  return(p >= lower_bounds & p <= upper_bounds)
+}
+```
+
+        
+    b. Next, write a second function that takes three inputs: `n`, `p`, and `n_runs`, representing the number of times to run your simulation. This function should use your function from (a) to simulate `n_runs` binomial random variables and return the proportion of the `n_runs` for which $p$ is contained in the confidence interval.
+    
+```{r}
+sim_prop_in_int <- function(n, p, n_runs) {
+  conf_int_count <- 0
+  
+  # Loop over the number of sims specified by n_runs.
+  for(i in 1:n_runs) {
+    # If p is in conf. int
+    if(is_confidence_int(n, p)) {
+      
+      # Increment counter if p is within conf. int.
+      conf_int_count <- conf_int_count + 1
+    }
+  }
+  sim_proportion <- conf_int_count / n_runs
+  return(sim_proportion)
+}
+```
+    
+    c. Test your function from (b) with `n = 20`, `p = .5`, and `n_runs = 1000`.
+    
+```{r}
+set.seed(100)
+cat("Proportion of 1000 runs where 0.5 is contained in the conf. int:")
+cat("\n")
+sim_prop_in_int(20, 0.5, 1000)
+```
+    
+    d. Use your simulation code to investigate the following questions: For what values of `n` and `p` is the frequentist coverage close to the expected 95\% value? For what values of `n` and `p` is the frequentist coverage very different to the expected 95\% value?
+
+```{r}
+set.seed(100)  
+
+n <- 100
+
+# Define p values for testing
+p_values <- seq(0.0, 1.0, by = 0.1)
+
+# run the simulation for a given p and return the coverage proportion
+run_simulation <- function(p) {
+  mean(replicate(1000, is_confidence_int(n, p)))
+}
+
+# Use sapply to run the sim function over the range of p values
+coverage_proportions <- sapply(p_values, run_simulation)
+
+# Combine p values and coverage proportions into a data frame
+coverage_results <- data.frame(p = p_values, Coverage = coverage_proportions)
+print(coverage_results)
+```
+We can see that most p-values that are less than or equal to 1 result in a high probability of the frequentist coverage being close to the expected 95% value. The value of n, which is 100 indicates that n = 100 and p-values from 0 to 1.0 are close to the expected 95% value.  
+
+```{r}
+set.seed(100)  # Ensure reproducibility
+
+# Define the values of n you want to test
+n_values <- c(2, 20, 50, 100, 200, 500)
+
+p <- 0.5
+
+# Function to run the simulation for a given n and return the coverage proportion
+run_simulation <- function(n) {
+  mean(replicate(1000, is_confidence_int(n, p)))
+}
+
+coverage_proportions <- sapply(n_values, run_simulation)
+
+# Combine n values and coverage proportions into a data frame
+coverage_results <- data.frame(n = n_values, Coverage = coverage_proportions)
+print(coverage_results)
+```
+
+From the table, we can see that n values less than or equal to 5 and a p-val of 0.5 results in a low prob. coverage. Any other n value greater than 5 results in a 85%+ probability of covering the 95%. Therefore, low n values result in less coverage probability, but with a higher n value like 20, there is greater coverage for varying p-values.
+
+## C. Hypothesis Testing
+
+Use the following code to obtain the Hawaiian Airlines and Alaska Airlines flights from the `nycflights13` package.
+
+```{r, warning = F, message = F}
+library(tidyverse)
+library(nycflights13)
+data("flights")
+flights_sample <- flights |> 
+  filter(carrier %in% c("HA", "AS"))
+```
+
+6. Compute a 95% confidence interval for the mean `arr_delay` for Alaska Airlines flights. Interpret your results.
+
+```{r}
+delays_alaska <- flights |>
+  filter(carrier == "AS") |>
+  na.omit()
+
+sample_mean <- mean(delays_alaska$arr_delay) 
+print(paste("Sample mean: ", sample_mean))
+
+# calculating standard error of mean
+sample_length <- length(delays_alaska$arr_delay)
+sample_sd <- sd(delays_alaska$arr_delay)
+standard_error <- sample_sd / sqrt(sample_length)
+
+# Z-score for 95% confidence level
+z_score <- qnorm(0.975) 
+print(paste("Z-score:", z_score))
+
+# Margin of error
+margin_error <- z_score * standard_error
+
+# Calculate the confidence interval
+lower_bound <- sample_mean - margin_error
+upper_bound <- sample_mean + margin_error
+print(paste("95% Confidence Interval: [", lower_bound, ", ", upper_bound, "]"))
+```
+
+The sample mean of approximately -9.93 suggests that on average, Alaskan Airline flights tend to arrive about 10 minutes earlier than scheduled.
+
+The Z-score of 1.96 suggest that the confidence interval is a 95% confidence interval. This value corresponds with the critical value from the standard normal distribution, encompassing 95% of the total area underneath the curve.
+
+The range within the 95% confidence interval, -12.62 to -7.25 suggests that we are 95% confident that Alaskan Airline flights arrive on average approximately 7.3 to 12.6 minutes earlier than expected. In other words, we are 95% confident that the true mean `arr_delay` for Alaskan Airline flights lies within the computed lower and upper bounds.
+
+7. Compute a 95% confidence interval for the mean `arr_delay` for Hawaiian Airlines flights. Interpret your results.
+
+```{r}
+delays_hawaiian <- flights |>
+  filter(carrier == "HA") |>
+  na.omit()
+
+sample_mean <- mean(delays_hawaiian$arr_delay) 
+print(paste("Sample mean: ", sample_mean))
+
+# calculating standard error of mean
+sample_length <- length(delays_hawaiian$arr_delay)
+sample_sd <- sd(delays_hawaiian$arr_delay)
+standard_error <- sample_sd / sqrt(sample_length)
+
+# Z-score for 95% confidence level
+z_score <- qnorm(0.975)  
+print(paste("Z-score:", z_score))
+
+# Margin of error
+margin_error <- z_score * standard_error
+
+# Calculate the confidence interval
+lower_bound <- sample_mean - margin_error
+upper_bound <- sample_mean + margin_error
+print(paste("95% Confidence Interval: [", lower_bound, ", ", upper_bound, "]"))
+```
+
+The sample mean of approximately -6.92 suggests that on average, Hawaiian Airline flights tend to arrive about 7 minutes earlier than scheduled.
+
+The Z-score of 1.96 suggest that the confidence interval is a 95% confidence interval. This value corresponds with the critical value from the standard normal distribution, encompassing 95% of the total area underneath the curve.
+
+The range within the 95% confidence interval, -14.88 to 1.05 suggests that we're 95% confident that Hawaiian Airline flights arrive within the range of approximately 15 minutes earlier than expected all the way to approximately 1 minute later than expected. In other words, we are 95% confident that the true mean `arr_delay` for Hawaiian Airline flights lies within the computed lower and upper bounds.
+
+8. Compute a 95% confidence interval for the proportion of flights for which `arr_delay > 0` for Hawaiian Airlines flights. Interpret your results.
+
+```{r}
+flights_hawaiian <- flights |>
+  filter(carrier == "HA", arr_delay > 0) |>
+  na.omit()
+
+sample_mean <- mean(flights_hawaiian$arr_delay) 
+print(paste("Sample mean: ", sample_mean))
+
+# calculating standard error of mean
+sample_length <- length(flights_hawaiian$arr_delay)
+sample_sd <- sd(flights_hawaiian$arr_delay)
+standard_error <- sample_sd / sqrt(sample_length)
+
+# Z-score for 95% confidence level
+z_score <- qnorm(0.975) 
+print(paste("Z-score:", z_score))
+
+# Margin of error
+margin_error <- z_score * standard_error
+
+# Calculate the confidence interval
+lower_bound <- sample_mean - margin_error
+upper_bound <- sample_mean + margin_error
+print(paste("95% Confidence Interval: [", lower_bound, ", ", upper_bound, "]"))
+```
+
+The sample mean of approximately 35.00 suggests that on average, Hawaiian Airline flights tend to arrive about 35 minutes later than scheduled whenever there is an arrival delay, hence filtering for `arr_delay > 0`.
+
+The Z-score of 1.96 suggest that the confidence interval is a 95% confidence interval. This value corresponds with the critical value from the standard normal distribution, encompassing 95% of the total area underneath the curve.
+
+The range within the 95% confidence interval, 9.15 to 60.91 suggests that we're 95% confident that delayed Hawaiian Airline flights arrive within the range of approximately 9.2 minutes to approx. an hour later than originally expected. In other words, we are 95% confident that the true mean `arr_delay` for Hawaiian Airline flights lies within the computed lower and upper bounds.
+
+9. Consider the null hypothesis that the mean `arr_delay` for Alaska is equal to the mean `arr_delay` for Hawaiian and the alternative hypothesis that the mean `arr_delay` values are different for the two airlines. Perform an appropriate hypothesis test and interpret your results.
+
+```{r}
+library(tidyverse)
+library(nycflights13)
+
+data("flights")
+
+# Filtering and preparing Alaskan Airlines delay data
+alaska_delays <- flights |>
+  filter(carrier == "AS") |>  
+  select(arr_delay) |>       
+  drop_na() |>               
+  pull() # Pull column into a vector
+
+# Filtering and preparing Hawaiian Airlines delay data
+hawaiian_delays <- flights |>
+  filter(carrier == "HA") |> 
+  select(arr_delay) |>      
+  drop_na() |>             
+  pull()                      
+
+print(paste("Mean Alaska Airlines: ", mean(alaska_delays)))
+print(paste("Mean Hawaiian Airlines: ", mean(hawaiian_delays)))
+
+# Perform two-sample t-test
+test_result <- t.test(alaska_delays, hawaiian_delays, alternative = "two.sided")
+
+# Print results of the t-test
+print(test_result)
+```
+
+The mean arrival delay for Alaskan Airlines is about -9.93 minutes. The mean arrival delay for Hawaiian Airlines is about -6.92 minutes.
+
+From the Welch Two Sample t-test, the t_value = -0.703 suggests that the mean arrival delay for Alaskan Airlines is slightly more negative than the mean arrival delay for Hawaiian airlines. Therefore, flights tend to arrive earlier on Alaska airlines as opposed to Hawaiian airlines.
+
+Under the null hypothesis, the p-value of 0.4822 suggests that there is high probability of observing no true difference in the mean arrival delays between Hawaiian and Alaskan airlines, meaning, we can reject the null hypothesis.
+
+For the 95% confidence interval containing the range from -11.44 to 5.41, it suggests that the mean arr_delay for Alaskan airlines can be as low as approx -11.5 minutes earlier, and the mean arr_delay for Hawaiian airlines can be as high as approx. +5.41 minutes later.
+
+The wide range within the confidence interval suggests that varying factors can affect the flight arrival times.
+
+## D. Linear Regression
+
+Researchers at the University of Texas in Austin, Texas tried to figure out what causes differences in instructor teaching evaluation scores. Use the following code to load data on 463 courses. A full description of the data can be found [here](https://www.openintro.org/book/statdata/?data=evals).
+
+```{r, warning = F, message = F}
+evals <- readr::read_csv("https://www.openintro.org/book/statdata/evals.csv")
+```
+
+10. Carry out a linear regression with `score` as the response variable and `age` as the single explanatory variable. Interpret your results.
+
+```{r}
+library(readr)
+linear_model <- lm(score ~ age, data = evals)
+
+summary_lm <- summary(linear_model)
+print(summary_lm)
+
+plot(score ~ age, data = evals,
+     xlab = "Age(Years)",
+     ylab = "Evaluation Score",
+     pch  = 16, col = "red")
+abline(linear_model, col = "black", lwd = 2)
+```
+
+The estimated intercept, 4.46, represents the expected teacher evaluation score of a professor who is zero years old, which serves as a baseline for which the effect of age on a teacher's eval score.
+
+The estimated age coefficient, -0.005938 with the a standard error of 0.002569 suggests that increasing age by 1 year drops the teacher's evaluation score by approx 0.00594 points. Given these stats for age, the p_value for the age coefficient is approx 0.0213, and is statistically significant at the 5% level given the F-statistic and its p-value. The t-value for the age coefficient, -2.311. reflects the number of standard devs the coefficient is from 0. With a p-val of 0.0213, we are suggesting that there is a 2.13% chance of observing a case where there is no effect on the age. The multiple r-squared value of 0.01146 indicates that approx 1.146 % of the variance between age and score is explained by the age factor.
+
+From the visualization, we can see that the negative relationship between age and score has a pretty small magnitude, suggesting that older instructors may receive a lower eval score. We should be careful here since this relationship is pretty weak, and doesn't completely suggest that there is a strong relationship between age and higher/lower eval score. From the visualization, it's clear to see that the data is very scattered from the linear regression line, indicating that there are other factors which contribute to a lower/higher eval score, and also suggests that the relationship between age and eval score is not very strong.
+
+11. Extend your regression model by adding an additional explanatory variable. What happens to your results? Are the new $p$-values appropriate to use?
+
+```{r, message = F}
+library(ggplot2)
+extended_model <- lm(score ~ age + cls_profs, data = evals)
+
+# Summary of the extended model
+summary_extended_model <- summary(extended_model)
+print(summary_extended_model)
+
+# Adding a regression line
+ggplot(data = evals, aes(x = age, y = score, color = cls_profs)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +  # Adds linear model line
+  labs(x = "Age (Years)", y = "Evaluation Score") +
+  ggtitle("Linear Model of Score by Age and Num. Class Section") +
+  theme_minimal()
+```
+
+When adding the variable `cls_profs`, the relationship between age and score remains practically the same as the last problem, with slight variations in the intercepts and age coefficients.
+
+The cls_prof coefficient value of -0.028045 suggests that there is a decrease in score associated with the variable cls_profs(# of professors teaching sections in the course). The p-value associated with cls_profs, 0.5982 suggests that this small change is not statistically significant. This essentially means that there is not really a meaningful impact on the teaching scores given the number of professors teaching sections in the particular course. Like before, the very low R-values suggest that there are other variables which have a greater relationship to score, like age for instance.
+
+The visualization helps paint a clearer picture representing the regression between age and eval score given the number of professors who teach the same course. 
+
+The slightly negative regression line indicates that there is a slight relationship (negative) between age and evaluation scores for one course which is taught by multiple professors. This negative relationship indicates that there is some truth to the fact that older instructors receive slightly lower scores when the same class has separate sections, taught by different professors.
+
+The slightly positive regression line indicates that there is a slight relationship (positive) between age and eval scores for a course which is only taught by one professor (one section). This positive relationship indicates that there is some truth to the fact that older professors who teach a course that only have one section receive higher eval scores.
+
+Given these two relationships, the spread of the data has too much variability from the regression lines, which indicates that there are other factors that influence eval score in addition to age and number of class sections. Adding in a few more variables/factors may show stronger relationships.

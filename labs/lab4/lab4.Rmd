@@ -1,0 +1,269 @@
+---
+title: "Lab 4: Data Visualization"
+author: "Brendan Dishion"
+date: ""
+format: 
+  html:
+    embed-resources: true
+    code-tools: true
+    code-summary: "Code"
+---
+
+Remember, **follow the instructions below and use R Markdown to create a pdf document with your code and answers to the following questions on Gradescope.** You may find a template file by clicking "Code" in the top right corner of this page.
+
+### Collaborators
+
+INSERT NAMES OF ANY COLLABORATORS
+
+```{r, message = F}
+library(ggplot2)
+library(dplyr)
+```
+
+## A. Basic visualizations
+
+For this portion, we'll be using the `palmerpenguins` data. Use the following code to load the data.
+
+```{r, message = F}
+library(palmerpenguins)
+data(penguins)
+```
+
+1.  Create and interpret a histogram of `bill_length_mm` using base R code. Be sure to use meaningful axis labels and titles.
+
+```{r}
+penguins <- na.omit(penguins)
+hist(
+  x = penguins$bill_length_mm,
+  ylim = c(0, 40 * 1.5),
+  main = "Distribution of bill length (mm) among penguins",
+  col = "green"
+)
+```
+
+The following histogram displays the frequency of varying bill lengths among different penguin species. This histogram is almost an "m" shape, and we can see that most penguins have a bill length between 35-52 mm. There are a few outliers, however, their frequency is very low, so they don't have to be considered heavily in my analysis of bill length.
+
+2.  Create and interpret a histogram of `bill_length_mm` using ggplot2. Be sure to use meaningful axis labels and titles.
+
+```{r}
+ggplot(data = penguins,
+       aes(x = bill_length_mm)) +
+  geom_histogram(fill = 'blue', binwidth = 1) +
+  xlab("Bill Length of Penguins (mm)") +
+  ggtitle("Distribution of bill length among penguins")
+```
+
+The following histogram is nearly the same as before, however, we can see a visualization of a geometric histogram. This gives us a much better visualization in terms of bill length among penguins and their frequencies, and it also gives us a more accurate visualization of the data. This histogram closely resembles an uppercase "M", and we can see that length with the most frequency is about 46.5mm. This histogram shows us that the majority of penguins have a bill length that falls between the range of 40-55mm, and that a high frequency of them have a bill length of approx. 47 mm.
+  
+3.  Create and interpret a scatterplot of `bill_length_mm` versus `bill_depth_mm` using base R code. Be sure to use meaningful axis labels and titles.
+
+```{r}
+plot(
+  x = penguins$bill_depth_mm,
+  y = penguins$bill_length_mm,
+  main = "Bill Length vs Bill Depth",
+  xlab = "Bill Depth (mm)",
+  ylab = "Bill Length (mm)",
+  col = "blue",
+)
+```
+
+The scatterplot gives us a visualization of the bill length vs the bill depth for varying penguins. We can typically see that penguins with a shorter bill depth tend to have a longer bill length, and vice versa.If a penguin had a short bill length, we see that they typically have a longer bill depth. I can see a high concentration of dots where the bill depth is greater than or equal to 17, and these penguins tend to a shorter bill length than penguins with a bill depth that was less than or equal to 15. This means that these penguins having varying characteristics, including deep, short bills, and also non-deep, long bills. Also there are a few others in the mix that have long bill depths and long bill lengths, however, there aren't very many of them.
+
+4. Create and interpret a scatterplot of `bill_length_mm` versus `bill_depth_mm` using ggplot2. Be sure to use meaningful axis labels and titles.
+
+```{r}
+ggplot(data = penguins,
+       aes(x = bill_depth_mm, y = bill_length_mm)) +
+  geom_point(color = 'red', alpha = 0.5) +
+  xlab("Bill Depth (mm)") +
+  ylab("Bill Length(mm)") +
+  ggtitle("Bill Length vs. Bill Depth for Penguins")
+```
+
+This scatterplot is essentially the same as the last question, however, with ggplot we can see the visualization much cleaner.This visualization essentially tells us the same things as the last question, but as said before, we can adjust it to be much cleaner.
+
+5. Update your `ggplot2` scatterplot of `bill_length_mm` versus `bill_depth_mm` using ggplot2 so that the color of a point represents the corresponding penguin's species. What do you notice?
+
+```{r}
+ggplot(data = penguins,
+       aes(x = bill_depth_mm, y = bill_length_mm, color = species)) +
+  geom_point(alpha = 0.5) +
+  xlab("Bill Depth (mm)") +
+  ylab("Bill Length(mm)") +
+  ggtitle("Bill Length vs. Bill Depth for Penguins")
+```
+
+This scatterplot has given us the most to work with in terms of interpreting our visualization. We can see that the "Adelie" species tend to have a shorter bill lengths than the species "Gentoo", however, the "Adelie" tend to have deeper bills than most Gentoo. The "Chinstrap" seems to be the species that consistently has the longest depth and length, however, there aren't too many of them in the visualization. So, we can conclude that "Adelie" species have shorter bill lengths than that of the "Gentoo", however, in turn they have a deeper bill than the "Gentoo". 
+
+## B. Analyzing trends in San Jose rental prices 
+
+For this component, you will be exploring and visualizing data on Craigslist apartment rental postings in the Bay Area. The data are available [here](https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-07-05/rent.csv) from Tidy Tuesday, as prepared by [Dr. Kate Pennington](https://github.com/rfordatascience/tidytuesday/blob/master/data/2022/2022-07-05/readme.md). Note that you can use links within `read_csv()` to read online .csv files. I recommend saving a version of the unprocessed .csv on your machine in a `data` subfolder within your project folder so you will be able to work offline.
+
+6. How many 1 bedroom listings from Santa Clara county are in this dataset?
+
+```{r, message = F}
+library(dplyr)
+
+county_data <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-07-05/rent.csv')
+
+county_data |>
+  filter(!is.na(beds), county == "santa clara", beds == "1") |> 
+  summarize("Number of 1 Bed Listings" = n())
+```
+
+There are 12,455 (One Bed Listings) in Santa Clara County from this dataset.
+
+7. What is the median price for a 1 bedroom listing in Santa Clara county in 2018?
+
+```{r, message = F}
+county_data |>
+  filter(county == "santa clara", beds == "1", year == "2018") |>
+  summarize("Median Price" = median(price, na.rm = T))
+```
+
+The median price of a 1 bedroom listing in Santa Clara County in 2018 was $2,095.
+
+8. Which county has the highest median price for a 1 bedroom listing in 2018?
+
+```{r, message = F}
+county_data |>
+  filter(beds == "1", year == "2018") |>
+  group_by(county) |>
+  summarize("Max Median Price among Counties" = median(price, na.rm = T)) |> 
+  ungroup() |> 
+  arrange(desc(`Max Median Price among Counties`)) |>
+  slice(1)
+```
+
+The county with the highest median price for a 1 bedroom listing in 2018 was San Francisco at $3,000.
+
+9. Create two histograms for the prices of 1 bedroom listings in Santa Clara county in 2005 and 2018. Compare and discuss.
+
+```{r}
+data_2005 <- county_data |>
+  filter(county == "santa clara", beds == "1", year == "2005")
+
+data_2018 <- county_data |>
+  filter(county == "santa clara", beds == "1", year == "2018")
+
+ggplot(data_2005, aes(x = price)) +
+  geom_histogram(fill = 'orange', binwidth = 40) +
+  xlab("Price") +
+  ggtitle("1-Bed Listings in SC County in 2005")
+
+ggplot(data_2018, aes(x = price)) +
+  geom_histogram(fill = 'green', binwidth = 40) +
+  xlab("Price") +
+  ggtitle("1-Bed Listings in SC County in 2018")
+```
+
+When we compare these two histograms, it's clear to see that the price for single bedrooms in Santa Clara County in 2005 was much cheaper than it was in 2018. In the histogram for the year 2005, we can see that the majority of people paid less than $1,100 for rent, however in 2018, this varies drastically. The majority of people in 2018 paid rent that fell in between the $1,600-$2,700 range. This generally makes sense since inflation is a major factor within the housing market. Within a 13 year period, we can see that the price people generally paid for rent increased by about $500-$1,600.
+
+10. Create and interpret a line plot with year on the x-axis and median price for a 1 bedroom apartment for Santa Clara county on the y-axis from 2000 to 2018. 
+
+```{r}
+data_2000_2018 <- county_data |>
+  filter(county == "santa clara", beds == "1", year >= 2000, year <= 2018) |> 
+  group_by(year) |>
+  summarize(med_price = median(price, na.rm = T))
+
+ggplot(data_2000_2018, aes(x = year, y = med_price)) +
+  geom_line(color = "black") +
+  geom_point(color = "red") +
+  xlab("Year") +
+  ylab("Median Price") +
+  ggtitle("Median Price of 1 bedroom apartments in SC county from 2000 to 2018")
+```
+
+This line plot shows the median price of single bedroom listings in Santa Clara County between 2000-2018. Based on the median price in 2006, the cost has nearly doubled since the last recorded year in our visualization, 2018. This is fairly simple to follow, and we can see an increase in the median price over the years. There are very minor dips sometimes, but the general trend continues upwards.
+
+11. Create and interpret a single plot with year on the x-axis and median price for a 1 bedroom apartment on the y-axis, using a separate line for each city in Santa Clara county, for the years 2000 to 2018. 
+
+```{r, message = F}
+data_single_plot <- county_data |>
+  filter(county == "santa clara", beds == "1", year >= 2000, year <= 2018) |> 
+  group_by(year, city) |>
+  summarize(med_price = median(price, na.rm = T)) 
+
+ggplot(data_single_plot, aes(x = year, y = med_price, color = city)) +
+  geom_line(alpha = 0.5) +
+  xlab("Year") +
+  ylab("Median Price") +
+  ggtitle("Median Price of 1 bedroom apartments for each city in SC county (2000 to 2018)")
+```
+
+This last visualization gives us the most to work with. We can see that generally all the cities within Santa Clara County have increased in price over the years, and we can see that Los Altos is generally the most expensive. Once again, the general trend is upwards for all of the cities, however, there were periods where some cities surpassed others, and situations where cities' prices changed drastically within a short period of time.
+
+## C. Open ended data visualization
+
+For this part, choose a dataset that interests you and identify a set of questions that you would like to explore via data visualizations. In particular, you should create three visualizations that satisfy the following requirements.
+
+### Instructions
+
+Dataset Chosen: "Average Time Spent By A User On Social Media" (Kaggle) 
+
+```{r, message = F}
+path_to_data <- "C:/Users/bdish/OneDrive/Documents/Math 167R/data/dummy_data.csv"
+
+social_media_usage <- readr::read_csv(path_to_data)
+```
+
+* Identify three research questions of interest that you want to study using this dataset.
+
+1. The first topic that interests me pertains to the social media usage among varying genders and ages. The first research question asks, "On average, how much time do men and women between the ages of 18-32 spend on social media?"
+
+```{r}
+age_gender <- social_media_usage |>
+  filter(age >= 18, age <= 32) |>
+  group_by(gender, age) |>
+  summarize(avg_time_spent = mean(time_spent)) |>
+  mutate(avg_time_spent) |> ungroup()
+
+ggplot(age_gender, aes(x = age, y = avg_time_spent, fill = gender)) + 
+  geom_col(position = "dodge") +
+  xlab("Age") +
+  ylab("Average Time Spent (Hours)") +
+  ggtitle("Average Time Spent Per Week On Social Media for Varying Genders Aged 18-32")
+```
+
+This visualization shows us varying genders between the ages of 18-32 who have the most average screen time on social media. From the following visualization, we can clearly see that females are the majority leaders in many of the age groups as it pertains to social media usage. 19 year old men are some of the top social media users across all ages and genders. As people age, it appears that the average screen time generally gets lower. From the age of 19, screen time for males keeps decreasing until they reach the age of 25. Once 25 years old, males screen time on social media begins to increase each year, but it is not nearly as much time as it used to be, when they were younger. Among the groups of women, a woman who is 28 years old spends the most time on average on social media compared to all other age groups and genders. From the age of 18, woman's screen time on social media begins to decrease until they are 23, however, once they are 23, their screen time tends to spike up and down. Non binary genders aged 30 average some of the most time on social media among all genders, along with 32 year old males. Averaging some of least amount of time on social media are males aged 25 and females aged 31, also non binary aged 32.
+
+2. The second topic that raises potential for research is the correlation between economic factors and social media behavior. The second research question asks, "How does economic status affect social media time for  users who are homeowners and live within urban demographics? In other words, is there a correlation between owning a home in the city and time spent on social media?"
+
+```{r, message = F}
+occupation_UK <- social_media_usage |>
+  filter(demographics == "Urban", isHomeOwner == "TRUE") |>
+  group_by(income, time_spent) |>
+  ungroup()
+
+ggplot(occupation_UK, aes(x = income, y = time_spent)) +
+  geom_point(aes(color = gender), alpha = 0.5) +
+  facet_wrap(~location) +
+  geom_smooth(method = "lm", se = FALSE) +
+  xlab("Income") +
+  ylab("Average Time Spent (Hours)") +
+  ggtitle("Social Media Time vs.Income for Homeowners in Urban Settings")
+
+```
+
+This visualization shows us the linear regression of income vs average time spent on social media for homeowners who live in urban demographics in the United Kingdom, USA, and Australia. In AUS, we can see the linear regression is more positive than that of the UK, which tells us that people in Australia tend to use social media more when they have a higher income. The UK still has a positive regression, however, we can see it's not as positive as the slope for Australia, meaning there is less correlation between income and time spent on social media in the UK than there is in Australia. In the US, there is actually a negative regression, which tells us that people with higher income tend to use social media less than those with a lower income. The visualization with the most correlation between time spent on social media and income was the country Australia, as we can see it's line has the steepest slope. The case isn't very strong for the US and UK, however, there is still some slight negative correlation in the US, and some slight positive correlation in the United Kingdom.
+
+3. The final topic that I chose for research is the correlation between hobbies/interests and the amount of time spent on social media. The final research question asks, "Is there any particular hobby/interest which is popular among social media users? Is there any correlation between the interests a person has and the time they spend on social media?"
+
+```{r}
+hobby_time_spent <- social_media_usage |>
+  filter(gender == "male", age >= 18) |>
+  group_by(interests) |>
+  summarize(avg_time = mean(time_spent, na.rm = T)) |>
+  ungroup()
+
+  ggplot(hobby_time_spent, aes(x = interests, y = avg_time, fill = interests)) +
+    geom_bar(stat = "identity") +  
+    labs(title = "Avg.Time Spent on Social Media by Males Aged 18 or Older Across Varying Hobbies",
+         x = "Hobbies/Interests",
+         y = "Avg. Time Spent on Social Media (hours)") 
+```
+
+The last visualization simply shows us the average time spent among varying hobbies and interests. It filters for males aged 18 or older; we typically see that lifestyle and travel hobbies average the same amount of screen time for social media, however, sports averages the least amount of screen time on social media out of all the hobbies. This makes sense since males who are aged 18 or older and have an interest in sports tend to be on social media less than those who travel or make lifestyle content.
+

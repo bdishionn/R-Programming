@@ -1,0 +1,228 @@
+---
+title: "Lab 7"
+author: "Brendan Dishion"
+format: 
+  html:
+    embed-resources: true
+    code-tools: true
+    code-summary: "Code"
+---
+
+Remember, **follow the instructions below and use R Markdown to create a pdf document with your code and answers to the following questions on Gradescope.** You may find a template file by clicking "Code" in the top right corner of this page.
+
+## A. Random sampling in R
+
+1. In your own words, explain the difference between `dnorm()`, `pnorm()`, `qnorm()`, and `rnorm()`.
+
+`dnorm()` - An R function that returns the value of the pdf (probability density function) of the normal distribution. This function takes 3 parameters, `x` ( specific random variable), `μ` (population mean), and `σ` (pop. standard deviation). `x` is  simply a vector of quantiles and the population mean is a vector of means; same goes for standard deviation, it is a vector containing the standard deviation. Example: `dnorm(x = 3, mean = 0, sd = 1)` returns the pdf of the norm. distrib. given the specified parameters.
+
+`pnorm()` - An R function that returns the value of the cdf (cumulative distribution function) of the normal distribution. `pnorm()` takes 4 parameters unlike `dnorm()`. These 4 parameters are `q` (specific random variable), `μ` (population mean), `σ` (pop. standard deviation), and `lower.tail`. q is a vector of quantiles, the pop. mean is a vector of means, and standard deviation is a vector that contains the standard deviation. The addition of the parameter `lower.tail` returns the area to the left of the `q` parameter in the normal distribution when `TRUE`, and returns the area of the values to the right of `q` in the normal distribution when `lower.tail` is `FALSE`. Example: `pnorm(q = 10, mean = 75, sd = 1, lower.tail = T)` returns the cdf of the norm. distrib. given the specified parameters.
+
+`qnorm()` - An R function that returns the value of the INVERSE cdf(cumulative density function) of a normal distribution. `qnorm()` takes 4 parameters similar to `pnorm()`. These 4 parameters are `p` (specified random variable), `μ`, `σ` , and `lower.tail`. In the function `qnorm()`,`p` represents a significance level (quantile). An example of a significance level is calculating the Z-score of the 85th quantile of a standard norm distribution. Example: `qnorm(p = .95, mean = 0, sd = 1)`. If we don't include the `lower.tail` parameter it defaults to `TRUE`, which simply returns the left tail. The mean, standard dev, and `lower.tail` parameters follow the same structure as `pnorm()`. 
+
+`rnorm()` - An R function that returns a vector of normally distributed random variables. `rnorm()` takes 3 parameters; `n` (number of datasets simulated), `μ` (population mean), and `σ` (standard deviation). Unlike the other functions listed above, `rnorm` returns  a vector of size n. instead of singular values. Example: `rnorm(n = 10, mean = 0, sd = 1)` returns a vector of 10 normally distributed RVs (random vars) with a specified average and standard deviation. 
+
+2. Suppose we simulate `x <- runif(1)`. What is the distribution of `qnorm(x)`?
+
+```{r}
+set.seed(100)
+x <- runif(1)
+print(x)
+#x = 0.3077661
+qnorm(x, mean = 78, sd = 3.5)
+qnorm(x, mean = 0, sd = 1)
+```
+
+When I run the code `x <- runif(1)`, x results in a value of 0.3077661. When passing this probability value into the `qnorm()` function, I am telling `qnorm()` to find the inverse cumulative distribution value that matches the probability. When passing a mean value of 78 and a standard deviation value of 3.5 into the function, I am plugging in a probability for x into `qnorm()` and returning/finding the boundary value that determines the area that is passed in. Based on the mean and sd for the first `qnorm()` instance, let's assume that they represent statistical values for test scores. With x = .3077661, we are essentially looking for the test score for test-takers who scored in the 31st percentile of all people. In other words, suppose you want to find the 31st percentile of a normal distribution whose mean is 78 and standard deviation is 3.5, you can then use `qnorm()` to find the test value that is the 31st percentile. This simply implies that approx. 31% of values in a population will lie below a test score of approx. 76.24%. With `qnorm()` we are simply given an area, and then returning the boundaries that enclose this area. 
+
+If we use a standard normal distribution, the `mean` = 0 and `sd` = 1, and it returns the corresponding Z-Score, which is a measure of how many standard deviations a specific element is from the mean. In the second instance of `qnorm()` above, I am calculating the Z-Score of the 31st quantile of the standard normal distribution. Based on the output -0.5021924, the Z-Score is negative, indicating that the value lies below the mean of the distribution.
+
+With these facts in mind, I conclude that `x` is uniformly distributed. This is because every possible percentile from 0 to 100 has an equal chance of being selected with `runif(1)`. With standard normal parameters, every percentile is equally likely due to the uniform distribution of `x`. This would mean that the distribution for `qnorm(x)` for the standard norm distribution is the entire range of possible z-scores. In the case of non-standard normal distribution, we are shifting and scaling the standard norm distribution, and obtaining actual values from the distribution instead of a Z-Score. Even though I set a seed for observation purposes, we can assume that the `runif()` function implies the uniform distribution.
+
+3. Suppose we simulate `x <- rnorm(1)`. What is the distribution of `pnorm(x)`?
+
+```{r}
+set.seed(10)
+x <- rnorm(1)
+#x = 0.01874617
+pnorm(x, mean = 5, sd = 1)
+pnorm(x, mean = 0, sd = 1)
+```
+When running the `rnorm()` function, it returns a value of 0.01874617 (value that is passed into `pnorm()` as `x`). `pnorm()` simply returns the CDF, which  gives us the probability that a normally distributed random variable with a given mean and standard deviation is less than or equal to the value of x.
+
+In the first instance, `pnorm(x, mean = 5, sd = 1)`, the output is a very small number. The function calculates the cumulative prob of observing a value less than x. Since x is nearly 2% on the normal distribution, it's fair to say that this probability would be very small. The small output also indicates that x is far in the left tail of the distribution, which makes it unlikely that we'll observe a value less than or equal to x with the normal distribution centered at 5.
+
+In the second instance, `pnorm(x, mean = 0, sd = 1)`, the probability is around 0.50, which tells us that x is slightly above the mean of 0. This makes sense since if the mean is 0 because the value of x is slightly greater than 0, and in the standard normal distribution, this value would lie closely to the mean value, which is approx. 50%. This essentially means that the prob for value `x` will be approx 50%, since nearly 50% of all values on the standard norm distribution would be equal to or less than the value of x.
+
+## B. Gambler's ruin
+
+A and B are playing a coin flipping game. A starts with $n_a$ pennies and B starts with $n_b$ pennies. A coin is flipped repeatedly and if it comes up heads, B gives A a penny. If it comes up tails, A gives B a penny. The game ends when one player has no more pennies.
+
+4. Write a function `run_one_sim(seed, n_a, n_b)` to simulate one game. Repeatedly use your code with different values of `seed` to estimate each player's probability of winning when $n_a = n_b = 10$.
+
+```{r}
+run_one_sim <- function(seed, n_a, n_b) {
+  
+  A_score <- n_a
+  B_score <- n_b
+
+  # while A is not 0 and B is not 0, the game is still running. 
+  # Stop looping when player reaches 0 (indicates "GAME OVER")
+  while (A_score != 0 && B_score !=0){
+    # simulates coin flip
+    flips <- sample(x = c("H", "T"), size = 1, replace =T)
+    
+    # if flip is Heads, decrease B's score by 1 and increase A's by 1
+    if (flips == "H") { 
+      B_score <- B_score - 1
+      A_score <- A_score + 1
+    }
+    # otherwise if flip is Tails, decrease A's score by 1 and increase B's by 1
+    else if (flips == "T") {
+      A_score <- A_score - 1
+      B_score <- B_score +1
+    }
+  }
+  # if A's score is 0, return B as winner
+  if(A_score == 0) {
+    winner <- "B"
+    
+  # otherwise if B's score is 0, return A as winner
+  } else if(B_score == 0) {
+      winner <- "A"
+  }
+
+  return(winner)
+}
+
+input_seed <- 1:1000
+
+# Using lapply to run the simulation function 'run_one_sim' for each seed value
+# Creates a list where each element is the outcome ("A" or "B") 
+# simulation function is needed to read in input_seed vector
+
+results_A_B <- lapply(input_seed, function(seeds) run_one_sim(seeds, 10, 10))
+
+# sapply processes each element of 'results_A_B', checking if it equals "A"
+# Summing this vector gives the total number of wins for A
+# Dividing by the total number of simulations gives win probability for A
+
+prob_A_wins <- sum(sapply(results_A_B, function(results_A) results_A == "A")) / 
+  length(results_A_B)
+
+prob_B_wins <- sum(sapply(results_A_B, function(results_B) results_B == "B")) / 
+  length(results_A_B)
+
+cat("Probability that A wins: ", prob_A_wins, "\n")
+cat("Probability that B wins: ", prob_B_wins, "\n")
+```
+
+5. Use your function to estimate each player's probability of winning when $n_a = 1,\ldots, 5$ and $n_b = 1,\ldots, 5$, testing every combination. Organize your results in a 5 by 5 matrix and print it out. What do you notice?
+
+```{r}
+num_sims <- 1000
+A_wins_matrix <- matrix(0, nrow = 5, ncol = 5)
+B_wins_matrix <- matrix(0, nrow = 5, ncol = 5)
+
+# Looping over all combinations of n_a and n_b from 1 to 5
+
+for (n_a in 1:5) {
+  for (n_b in 1:5) {
+    
+    # For each combination, replicate the random walk simulation num_sims times
+    # Uses a randomly selected seed for each simulation to ensure variability
+    results <- replicate(num_sims, run_one_sim(sample(1:1000, 1), n_a, n_b))
+    
+    # summing up wins for player A and dividing by num_sims to find prob. of A winning
+    A_wins <- sum(results == "A") / num_sims
+    
+    # setting the prob. of A winning to matrix A
+    A_wins_matrix[n_a, n_b] <- A_wins  
+    
+    # summing up wins for player B and dividing by num_sims to find prob. of B winning
+    B_wins <- sum(results == "B") / num_sims  
+    B_wins_matrix[n_a, n_b] <- B_wins  
+  }
+}
+print(A_wins_matrix)
+cat("\n")
+print(B_wins_matrix)
+cat("\n")
+print("Mean of A matrix:")
+mean(A_wins_matrix)
+cat("\n")
+print("Mean of B matrix:")
+mean(B_wins_matrix)
+```
+
+The matrices give us an easy way to visualize the probabilities of either A or B winning at each instance in the first 5 games. In terms of analyzing these results, it's clear to see the average probability value for each game converges around 0.5. This is because flipping a coin is an independent event, and there are only two outcomes, heads or tails, thus the prob for each game that player A or B will win should be around 1/2 or 0.50. Of course this is based on random chance and probability, thus the prob. of each instance vaires, but I can conclude that over large sample sizes, the prob for each converges near 0.5.
+
+## C. One-dimensional random walks
+
+In this part, you will simulate a one-dimensional random walk. Suppose you are at the point $x$ at time $t$. At time $t+1$, the probability of moving forwards to $x+1$ is $p$ and the chance of moving backwards to $x-1$ is $1-p$. Assume that at time $t=1$, you are at $x_1=0$.
+
+6. Write a function `random_walk()` that takes as input a numeric `n_steps` and a numeric $p$ and simulates `n_steps` steps of the one-dimensional random walk with forward probability $p$. You may have other input arguments if desired. The output should be a length vector of length `n_steps` starting with 0 where the $i$th entry represents the location of the random walker at time $t=i$. For example, `random_walk(5, .5)` may return the vector $(0, 1, 2, 1, 2)$. 
+
+```{r}
+random_walk <- function(n_steps, p) {
+  
+  positions <- numeric(n_steps)  # stores the position at each time step
+  positions[1] <- 0  # walker starts at position 0 at time t=1
+  
+  x <- 0
+  
+  # Loop through each time step from t=2 to n_steps
+  
+  for (t in 2:n_steps) {
+    
+    # At each time step, you can move forward (+1) or backward (-1)
+    # The probability of moving forward is p, and backward is 1 - p
+    step <- sample(c(1, -1), size = 1, prob = c(p, 1 - p))
+    
+    x <- x + step
+    
+    # Update the position at time t based on the step chosen
+    positions[t] <- x # positions[t - 1] is the position at the previous time step
+  }
+  
+  return(positions)
+}
+set.seed(100) 
+result <- random_walk(10, 0.5)
+print(result)
+```
+
+7. Use your function to generate a random walk of 500 steps with probability $.55$ and generate a line graph with $t=1,\ldots, 500$ on the x-axis and $x_1,\ldots, x_{500}$ on the y-axis.
+
+```{r}
+walking_500 <- random_walk(500, 0.55)
+plot(1:500, walking_500, type = "l",
+     xlab = "Time Intervals(t)", ylab = "Position(x)",
+     main = "Random Walk Simulation of 500 steps",
+     col = "red")
+```
+
+8. Use your function to generate two more random walks of 500 steps with probability $p$, where $p\sim \mathrm{Unif}(0, 1)$ and create a line graph with all three of your random walks, using different colors for each walk.
+
+```{r}
+set.seed(1000)
+random_prob1 <- runif(1) # random prob. for 2nd walk
+random_prob2 <- runif(1) # random prob. for 3rd walk
+
+walk_one <- random_walk(500, 0.55) 
+walk_two <- random_walk(500, random_prob1)    
+walk_three <- random_walk(500, random_prob2)    
+
+plot(1:500, walk_one, type = "l", col = "blue", 
+     ylim = range(c(walk_one, walk_two, walk_three)),
+     xlab = "Time Intervals(t)", ylab = "Position(x)",
+     main = "Three Random Walks with Varying Probabilities")
+lines(1:500, walk_two, col = "red")    # Add second walk to the plot
+lines(1:500, walk_three, col = "green")  # Add third walk to the plot
+```
+
+Line Colors:
+
+Blue line = first walk 
+Red line = second walk
+Green line = third walk

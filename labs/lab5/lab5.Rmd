@@ -1,0 +1,161 @@
+---
+title: "Lab 5"
+author: "Brendan Dishion"
+format: 
+  html:
+    embed-resources: true
+    code-tools: true
+    code-summary: "Code"
+---
+
+
+## 0. Cook County Assessor's Office 
+
+## A. Residential Sales Data
+
+1. Download the data from [this link](https://datacatalog.cookcountyil.gov/Property-Taxation/Assessor-Archived-05-11-2022-Residential-Sales-Dat/5pge-nu6u/about_data). How many rows are there in this dataset? What does each row represent? (Hint: be precise here).
+
+```{r, message = F}
+library(readr)
+```
+
+```{r, message = F} 
+file_path <- "C:/Users/bdish/OneDrive/Documents/Math 167R/data/cook_county_residential_data.csv"
+property_valuation <- read_csv(file_path)
+```
+
+```{r, message = F}
+nrow(property_valuation)
+```
+
+  There are 583,370 rows. Each row represents a single residential property sale for properties located in Cook County, Illinois. Specifically, each row corresponds to an arm's-length residential sale transaction in Cook County, Illinois. An arm's-length transaction refers to a transaction where the buyer and seller of a specific property act independently during the sale. In this case, it specifically refers to a sale of a residential property in Cook County where the buyer and seller are independent parties. These types of transactions typically serve as reliable data points for fairly assessing property values. 
+
+2. Examine the `Site Desirability` variable. What do each of the levels of this variable represent? You may need to refer to the [codebook](https://datacatalog.cookcountyil.gov/Property-Taxation/Assessor-Archived-05-11-2022-Residential-Sales-Dat/5pge-nu6u/about_data) to learn about this variable. Is it explained how this variable is determined?
+
+  Level -1 = Beneficial to value and increases property value,
+  Level 2 = Not relevant to the value of the property,
+  Level 3 = Detracts from the value of the property.
+
+  It explains that the variable `Site Desirability` lacks sufficient variation to be useful for modeling. So no, it isn't clearly explained how this variable is determined. Based off the name `Site Desirability`, it is most likely determined based on the desirability of the property; e.g. A property located right next to the ocean with the entire view of the ocean would have Level -1 site desirability, meaning it is a more desirable property to buy, but probably more expensive than the average property sale transaction.
+
+3. Give an example of a variable that is **not** included in this dataset that could be useful in determining property value.
+
+  An example of a variable that is not included in this dataset that could be useful when determining property value is a Boolean variable which checks whether or not a property has an HVAC system installed. We could call this variable `has_hvac`. This could be a valuable variable due to the fact that HVAC systems add value to a property and generally save homeowners money over time. Often times, things such as heating, ventilation, cooling and air are overlooked when purchasing a home, and these aspects generally add far more value to a home.
+
+4. Create a histogram of `Sale Price` for this dataset. Identify one issue with this visualization and attempt to address this issue.
+
+```{r, message = F}
+library(ggplot2)
+
+ggplot(data = property_valuation, 
+       aes(x = `Sale Price`)) +
+  geom_histogram(fill = 'green', bins = 40) +
+  xlab("Sale Price") +
+  ggtitle("Distribution of Sale Price") +
+  xlim(0, 3000000)
+```
+
+The issue with the initial visualization is that the limits for the x and y axis variables are not corresponding with the limits of the data. We can only see a small sliver of a bar in code that does not include an xlim. The range for the visualization is so high, we can only see one bar because all the data in the visualization is clumped within such a small portion of the range. When we include the xlim in our code, we can limit the      x-axis to a specific value, that way the data is in a far more observable range, and so we can also see the variation of the data in a much larger format. 
+  
+By setting the limit for the x-axis, when we go to graph our variables, the limit of the y-axis will adjust accordingly, giving us a visualization  that we can actually see. We can also set the number of bins instead of changing the binwidth. By setting the number of bins, we can get a much      clearer picture of the frequency of the varying sales prices across a certain range. If we were to adjust the binwidth, we would get one solid block, so creating individual bins helps sort the frequency of `Sale Price`.
+
+5. For the rest of the assignment, we will focus on a subset of properties. Provide code that creates a new `data.frame` called `clean_data` that contains only properties whose sale price is at least $500. Create a new column in this data frame called `log_sale_price` that contains the log-transformed `Sale Price` values.
+
+```{r, message = F}
+library(dplyr)
+
+clean_data <- property_valuation |>
+  filter(`Sale Price` >= 500) |>
+  mutate(log_sale_price = log(`Sale Price`)) |>
+  as.data.frame()
+```
+
+6. Visualize the association between number of bedrooms and `log_sale_price` using parallel box plots. You may need to convert `Bedrooms` to a factor before you are able to construct the parallel box plots. For clarity, only include properties with 10 or fewer bedrooms. Interpret your results.
+
+```{r, message = F}
+cleaned_Bedrooms <- clean_data |>
+  filter(Bedrooms <= 10) |>
+  mutate(Bedrooms = as.factor(Bedrooms))
+
+ggplot(cleaned_Bedrooms, aes(x = Bedrooms, y = log_sale_price, fill = Bedrooms)) +
+  geom_boxplot() + 
+  labs(x = "Number of Bedrooms", y = "Log Sale Price", 
+  title = "Association between Bedrooms and Log Sale Price") +
+  theme_minimal()
+```
+
+  From the visualization, it's clear to see that the Log Sale Price tends to increase when there are more bedrooms on the property listing. The log sale price for 5 bedroom properties was among the highest when compared to all the other properties with varying bedroom amounts. What's surprising is that properties with 5 or more bedrooms tend to have similar logarithmic sale prices to properties with 10 bedrooms, meaning, you could buy a 10 bedroom property for around the same price as a 5 bedroom property. 
+  
+  This makes sense because homes with 5 or more bedrooms are not very practical for many families, and most properties sold have around 5 bedrooms or less. Properties with bedrooms between the range of 5-10 are similar in price because there is less demand in the market for these houses, meaning there is probably a lot less variation among the buyers of properties with a lot of bedrooms. Of course, homes with 5 or more bedrooms will be more expensive than homes with 5 bedrooms or less, however there is far less variation in the 5-10 bedroom range than there is in the 1-4 bedroom range.
+
+7. Create a new factor variable called `age_bin` that has levels `1-20`, `21-40`, `41-60`, `61-80`, `81-100`, and `100+`. Visualize the association between `age_bin` and `log_sale_price` using parallel box plots. Interpret your results.
+
+```{r, message = F}
+breaks <- c(1, 21, 41, 61, 81, 100, Inf)
+labels <- c("1-20", "21-40", "41-60", "61-80", "81-100", "100+")
+
+clean_data <- clean_data |>
+  mutate(age_bin = cut(Age, breaks = breaks, labels = labels)) |>
+  filter(!is.na(age_bin))
+
+clean_data$age_bin <- factor(clean_data$age_bin, levels = labels)
+
+ggplot(clean_data, aes(x = age_bin, y = log_sale_price, fill = age_bin)) +
+  geom_boxplot() + 
+  labs(x = "Age Bin", y = "Log Sale Price", 
+  title = "Association between Age Ranges and Log Sale Price") +
+  theme_minimal()
+```
+
+  From the following visualization, we clearly see that the logarithmic sale price is the highest for ages range 1-20. This is due to a number of reasons. Younger people tend to pay more for properties because they may not have as good of credit as an adult who is much older, and therefore they may have to pay more interest rate on the property compared to someone with a well-defined credit history. Also, younger generations are paying more than ever for properties due to inflation. 
+  
+  The housing market only becomes more valuable over time, and we can see this generally makes sense since most of our grandparents and older people we may know have bought properties 20-100 years ago, and these properties are much more valuable now than when they first bought it. From age ranges 21-40, we see that log sale price is lower than the 1-20 range. From 21-40 and so on, the log sale price for a property doesn't vary much. The boxplots continue to narrow until the 81-100 range. A wide box means there is more variability in the log sale price for a specific age group, so we can see the 100+ age range has the most variation in terms of the distribution of the logarithmic sale price. When the boxplot is narrow, it tells us there is less variation in the log sale price among the people in the age group, meaning the most of the data aggregates towards a similar value.
+
+## B. Assessor First Pass Values
+
+8. Not all of the properties in the above dataset have public assessment values. You can download another dataset containing "First Pass Values" representing the Assessor's initial valuations for a set of properties in 2019 [here](https://datacatalog.cookcountyil.gov/Property-Taxation/Assessor-Archived-05-11-2022-First-Pass-Values/x88m-e569/about_data). How many rows are in this dataset?
+
+```{r, message = F}
+path <- "C:/Users/bdish/OneDrive/Documents/Math 167R/data/cook_county_first_pass.csv"
+first_pass_values <- read_csv(path)
+```
+
+```{r}
+nrow(first_pass_values)
+```
+
+There are 31,163 rows in this dataset.
+
+9. Use an appropriate function to combine the first pass values data with the `clean_data` from Part A. You should keep only rows that have both `log_sale_price` (from `clean_data`) and `First Pass Value 1` from the first pass values data. How many rows are in this combined dataset?
+
+```{r, message = F}
+combined_data <- inner_join(clean_data, first_pass_values, by = "PIN")
+
+combined_data <- combined_data |>
+  select(log_sale_price, `First Pass Value 1`)
+
+nrow(combined_data)
+```
+
+There are 6,120 rows in the combined dataset.
+
+10. Create a scatter plot with `log(First Pass Value 1)` on the x-axis and `log_sale_price` on the y-axis. Add a line to your plot indicating the line where `y=x`. Interpret your results. What do points above the line represent? What do points below the line represent?
+
+```{r, message = F}
+combined_data <- combined_data |>
+  group_by(log_sale_price) |>
+  summarize(lg_first_pass_1 = log(`First Pass Value 1`)) |>
+  ungroup()
+
+ggplot(data = combined_data,
+       aes(x = lg_first_pass_1, y = log_sale_price)) +
+  geom_point(alpha = 0.35, color = 'red') +
+  geom_abline(slope = 1, intercept = 0, color = 'black', linetype = "dashed") +
+  xlab("First Pass Valuation 1(log based)") +
+  ylab("Log Sale Price") +
+  ggtitle("Log Sale Price vs log(First Pass Valuation #1)")
+```
+
+  From the following visualization, we can see that there is a high concentration of dots from 12-14 on the x-axis and from 11-14 on the y-axis. The dashed black lines y=x gives a reference for comparison and represents values of `log_sale_price` that are equal to values of log(`First Pass Valuation 1`). The points above the line show us that the `log_sale_price` is greater than the `First Pass Valuation 1` value, meaning that the property may be overvalued since it's value is greater than it's initial valuation in 2019. 
+  
+  Points below the line mean that the 'log_sale_price' is less than the First Pass value, meaning that the property is undervalued compared to its first valuation. All of the dots that vary from the line in the visualization show us whether the property has become overvalued or undervalued over time. We can obviously see that a lot of the dots in the visualization fall beneath this line, meaning that they have become disproportionately undervalued overtime. 
