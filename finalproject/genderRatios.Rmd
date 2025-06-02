@@ -1,0 +1,363 @@
+```{r, message = F}
+library(dplyr)
+library(readr)
+library(tidyverse)
+library(ggplot2)
+library(tidyr)
+```
+
+# Load the dataset
+```{r, message = F, warning = F, show_col_types = F}
+file_path <- 'Population_E_All_Data_NOFLAG.csv'
+pop_data <- read_csv(file_path, locale = locale(encoding = "Latin1"))
+
+
+# Extract relevant columns
+relevant_years <- paste0("Y", 1950:2023)
+
+# filtered data for Area = "World"
+MF_data_world <- pop_data |>
+  filter(Element %in% c('Total Population - Female', 'Total Population - Male', 
+  'Total Population - Both sexes'), Area %in% c('World')) |>
+  select(Area, Element, all_of(relevant_years))
+
+# long format
+data_long <- MF_data_world |>
+  pivot_longer(cols = relevant_years, names_to = "Year", values_to = "Population") |>
+  mutate(Year = as.numeric(sub("Y", "", Year))) # Convert Year to numeric for analysis
+
+# filtered data for all countries/areas in the dataset
+MF_data_all_areas <- pop_data |>
+  filter(Element %in% c('Total Population - Female', 'Total Population - Male', 
+  'Total Population - Both sexes')) |>
+  select(Area, Element, all_of(relevant_years))
+
+# long format
+data_long_area <- MF_data_all_areas |>
+  pivot_longer(cols = relevant_years, names_to = "Year", values_to = "Population") |>
+  mutate(Year = as.numeric(sub("Y", "", Year))) # Convert Year to numeric for analysis
+
+# Aggregate data to calculate sums for each area and element
+data_summary <- data_long |>
+  group_by(Area, Year, Element) |>
+  summarize(Total_Population = sum(Population, na.rm = TRUE), .groups = 'drop') |>
+  pivot_wider(names_from = Element, values_from = Total_Population) |>
+  rename(Total_Female = `Total Population - Female`, 
+         Total_Male = `Total Population - Male`)
+
+# used for geographical plotting
+data_summary_area <- data_long_area |>
+  group_by(Area, Year, Element) |>
+  summarize(Total_Population = sum(Population, na.rm = TRUE), .groups = 'drop') |>
+  pivot_wider(names_from = Element, values_from = Total_Population) |>
+  rename(Total_Female = `Total Population - Female`, 
+         Total_Male = `Total Population - Male`)
+```
+
+
+```{r}
+# ratio stats for non-geographical data
+ratio_stats <- data_summary |>
+  mutate(Female_Percent = Total_Female / (Total_Female + Total_Male) * 100,
+         Male_Percent = Total_Male / (Total_Female + Total_Male) * 100,
+         M_to_F_Ratio = Total_Male / Total_Female,
+         F_to_M_Ratio = Total_Female / Total_Male)
+
+# ratio stats for geographical data
+ratio_stats_area <- data_summary_area |>
+  mutate(Female_Percent = Total_Female / (Total_Female + Total_Male) * 100,
+         Male_Percent = Total_Male / (Total_Female + Total_Male) * 100,
+         M_to_F_Ratio = Total_Male / Total_Female,
+         F_to_M_Ratio = Total_Female / Total_Male)
+
+# Plotting Female and Male Percentages Over Time (Total Area)
+ggplot(ratio_stats, aes(x = Year)) +
+  geom_line(aes(y = Female_Percent, color = "Female Percentage")) +
+  geom_line(aes(y = Male_Percent, color = "Male Percentage")) +
+  labs(title = "Female vs Male % Change for entire world pop.(1950-2024)",
+       x = "Year",
+       y = "Percentage",
+       color = "Gender") +
+  theme_minimal() +
+  scale_color_manual(values = c("Female Percentage" = "magenta", "Male Percentage" = "blue"))
+
+# Plotting Male to Female and Female to Male Ratios Over Time (Total Area)
+ggplot(ratio_stats, aes(x = Year)) +
+  geom_line(aes(y = M_to_F_Ratio, color = "Male to Female Ratio")) +
+  geom_line(aes(y = F_to_M_Ratio, color = "Female to Male Ratio")) +
+  labs(title = "M to F & F to M ratios for entire world pop.(1950-2024)",
+       x = "Year",
+       y = "Ratio",
+       color = "Ratio Type") +
+  theme_minimal() +
+  scale_color_manual(values = c("Male to Female Ratio" = "blue", "Female to Male Ratio" = "magenta"))
+```
+
+
+```{r}
+# growth rates for non-geographical data
+growth_rates <- data_summary |>
+  arrange(Year) |>
+  mutate(Female_Growth_Rate = (Total_Female - lag(Total_Female)) / lag(Total_Female) * 100,
+    Male_Growth_Rate = (Total_Male - lag(Total_Male)) / lag(Total_Male) * 100) |>
+  select(Year, Female_Growth_Rate, Male_Growth_Rate) |>
+  filter(!is.na(Female_Growth_Rate) & !is.na(Male_Growth_Rate)) 
+
+# Plotting growth rates over time (Total Area)
+ggplot(growth_rates, aes(x = Year)) +
+  geom_line(aes(y = Female_Growth_Rate, color = "Female Growth Rate")) +
+  geom_line(aes(y = Male_Growth_Rate, color = "Male Growth Rate")) +
+  labs(title = "Annual (%) Growth Rate by Gender for World Population",
+       x = "Year",
+       y = "Growth Rate (%)",
+       color = "Gender") +
+  theme_minimal() +
+  scale_color_manual(values = c("Female Growth Rate" = "magenta", "Male Growth Rate" = "blue"))
+```
+
+```{r}
+# Define the vector of top 5 countries
+top_countries <- c("China", "India", "United States of America", "Pakistan", "Indonesia")
+top_country_ratios <- ratio_stats_area |>
+  filter(Area %in% top_countries)
+
+# growth rates for geographical data
+growth_rates_area <- data_summary_area |>
+  arrange(Area, Year) |>
+  mutate(Female_Growth_Rate = (Total_Female - lag(Total_Female)) / lag(Total_Female) * 100,
+    Male_Growth_Rate = (Total_Male - lag(Total_Male)) / lag(Total_Male) * 100) |>
+  select(Area, Year, Female_Growth_Rate, Male_Growth_Rate) |>
+  filter(!is.na(Female_Growth_Rate) & !is.na(Male_Growth_Rate), Area %in% top_countries) |>
+  filter(Year > 1950)
+
+growth_rates_area_long <- growth_rates_area |>
+  pivot_longer(
+    cols = c(Female_Growth_Rate, Male_Growth_Rate),  # specify the columns to pivot
+    names_to = "Gender",  # New column for gender
+    values_to = "Growth_Rate"  # New column for growth rate values
+  ) |>
+  mutate(Gender = ifelse(Gender == "Female_Growth_Rate", "Female", "Male"))
+
+descriptive_stats <- growth_rates_area_long %>%
+  group_by(Area, Gender) %>%
+  summarize(
+    Mean = mean(Growth_Rate, na.rm = TRUE),
+    Median = median(Growth_Rate, na.rm = TRUE),
+    Maximum = max(Growth_Rate, na.rm = TRUE),
+    Minimum = min(Growth_Rate, na.rm = TRUE),
+    SD = sd(Growth_Rate, na.rm = TRUE),
+    .groups = 'drop'
+  )
+
+# Plotting growth rates over time (selected countries in area)
+ggplot(growth_rates_area_long, aes(x = Year, y = Growth_Rate, color = Gender)) +
+  geom_line() +
+  facet_wrap(~Area, scales = "free_y") +  # Creates a separate plot for each area if desired
+  labs(title = "Annual Pop. Growth Rate by Gender for Top 5 most Pop. Countries (1950-2024)",
+       x = "Year",
+       y = "Growth Rate (%)",
+       color = "Gender") +
+  scale_color_manual(values = c("Female" = "magenta", "Male" = "blue")) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+
+descriptive_stats
+```
+
+```{r}
+descriptive_stats_2 <- top_country_ratios %>%
+  group_by(Area) %>%
+  summarize(
+    Mean_Female_Percent = mean(Female_Percent, na.rm = TRUE),
+    Median_Female_Percent = median(Female_Percent, na.rm = TRUE),
+    Min_Female_Percent = min(Female_Percent, na.rm = TRUE),
+    Max_Female_Percent = max(Female_Percent, na.rm = TRUE),
+    
+    Mean_Male_Percent = mean(Male_Percent, na.rm = TRUE),
+    Median_Male_Percent = median(Male_Percent, na.rm = TRUE),
+    Min_Male_Percent = min(Male_Percent, na.rm = TRUE),
+    Max_Male_Percent = max(Male_Percent, na.rm = TRUE),
+
+    Mean_M_to_F_Ratio = mean(M_to_F_Ratio, na.rm = TRUE),
+    Median_M_to_F_Ratio = median(M_to_F_Ratio, na.rm = TRUE),
+    Min_M_to_F_Ratio = min(M_to_F_Ratio, na.rm = TRUE),
+    Max_M_to_F_Ratio = max(M_to_F_Ratio, na.rm = TRUE),
+
+    Mean_F_to_M_Ratio = mean(F_to_M_Ratio, na.rm = TRUE),
+    Median_F_to_M_Ratio = median(F_to_M_Ratio, na.rm = TRUE),
+    Min_F_to_M_Ratio = min(F_to_M_Ratio, na.rm = TRUE),
+    Max_F_to_M_Ratio = max(F_to_M_Ratio, na.rm = TRUE)
+  )
+
+# Print the descriptive statistics
+print(descriptive_stats_2)
+
+# Plotting Male to Female Ratio for selected countries in area
+ggplot(top_country_ratios, aes(x = Year, y = M_to_F_Ratio, color = Area)) +
+  geom_line() + # Use line to show trends over time
+  labs(title = "Male to Female Ratio (1950-2024) for Top 5 Most Populated Countries",
+       x = "Year",
+       y = "M to F Ratio") +
+  scale_color_brewer(palette = "Set1", name = "Country") + # Color by country
+  theme_minimal() + 
+  theme(legend.title = element_text(size = 12),  # Customize legend title
+        legend.text = element_text(size = 10))   # Customize legend text
+```
+
+```{r}
+# Plotting Female Pop. Percentage Change over time for selected countries in area
+ggplot(top_country_ratios, aes(x = Year, y = Female_Percent, color = Area)) +
+  geom_line() + # Use line to show trends over time
+  labs(title = "Female Pop. Percentage (1950-2024) for Top 5 Most Populated Countries",
+       x = "Year",
+       y = "Female Pop. %") +
+  scale_color_brewer(palette = "Set1", name = "Country") + # Color by country
+  theme_minimal() + 
+  theme(legend.title = element_text(size = 12),  # Customize legend title
+        legend.text = element_text(size = 10))   # Customize legend text
+```
+
+```{r}
+# Plotting Male Pop. Percentage Change over time for selected countries in area
+ggplot(top_country_ratios, aes(x = Year, y = Male_Percent, color = Area)) +
+  geom_line() + # Use line to show trends over time
+  labs(title = "Male Pop. Percentage (1950-2024) for Top 5 Most Populated Countries",
+       x = "Year",
+       y = "Male Pop. %") +
+  scale_color_brewer(palette = "Set1", name = "Country") + # Color by country
+  theme_minimal() + 
+  theme(legend.title = element_text(size = 12),  # Customize legend title
+        legend.text = element_text(size = 10))   # Customize legend text
+```
+
+```{r}
+max_M_percent <- ratio_stats_area |>
+  arrange(desc(Male_Percent)) |>
+  slice_head(n = 1) |>
+  select(Area, Year, Max_Male = Male_Percent)
+
+min_M_percent <- ratio_stats_area |>
+  arrange(Male_Percent) |>
+  slice_head(n = 1) |>
+  select(Area, Year, Min_Male = Male_Percent)
+
+max_F_percent <- ratio_stats_area |>
+  arrange(desc(Female_Percent)) |>
+  slice_head(n = 1) |>
+  select(Area, Year, Max_Female = Female_Percent)
+
+min_F_percent <- ratio_stats_area |>
+  arrange(Female_Percent) |>
+  slice_head(n = 1) |>
+  select(Area, Year, Min_Female = Female_Percent)
+
+# Merge the datasets by Year and Area 
+max_F_min_M <- merge(max_F_percent, min_M_percent, by = c("Year", "Area"))
+max_F_min_M_long <- pivot_longer(max_F_min_M, cols = c(Max_Female, Min_Male), 
+                                 names_to = "Gender", values_to = "Percentage")
+
+max_M_min_F <- merge(max_M_percent, min_F_percent, by = c("Year", "Area"))
+max_M_min_F_long <- pivot_longer(max_M_min_F, cols = c(Max_Male, Min_Female), 
+                                 names_to = "Gender", values_to = "Percentage")
+
+ggplot(max_F_min_M_long, aes(x = Area, y = Percentage, fill = Gender)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  coord_flip() +  # Flip the coordinates for better readability of area names
+  labs(title = "Maximum Female and Minimum Male Percentages by Area and Year",
+       subtitle = paste("Year:", unique(max_F_min_M_long$Year)),
+       x = "Area",
+       y = "Percentage") +
+  scale_fill_manual(values = c("Max_Female" = "pink", "Min_Male" = "lightblue")) +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+
+ggplot(max_M_min_F_long, aes(x = Area, y = Percentage, fill = Gender)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  coord_flip() +  # Flip the coordinates for better readability of area names
+  labs(title = "Maximum Male and Minimum Female Percentages by Area and Year",
+       subtitle = paste("Year:", unique(max_M_min_F_long$Year)),
+       x = "Area",
+       y = "Percentage") +
+  scale_fill_manual(values = c("Max_Male" = "lightblue", "Min_Female" = "lightpink")) +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+```
+
+```{r}
+top_2021_ratio <- ratio_stats_area |>
+  filter(Year == '2021') |>
+  arrange(desc(M_to_F_Ratio)) |>  # Change 'desc' to 'asc' depending on the metric and how you want to sort it
+  slice_head(n = 20)  # Select the top 20 entries
+
+top_1950_ratio <- ratio_stats_area |>
+  filter(Year == '1950') |>
+  arrange(desc(M_to_F_Ratio)) |>  # Change 'desc' to 'asc' depending on the metric and how you want to sort it
+  slice_head(n = 20)  # Select the top 20 entries
+
+ggplot(top_1950_ratio, aes(x = reorder(Area, M_to_F_Ratio), y = M_to_F_Ratio, fill = Area)) +
+  geom_col() +
+  coord_flip() +  # Flip coordinates to make it a horizontal bar plot
+  labs(title = "Top 20 Countries by Male to Female Ratio in 1950",
+       x = "Country",
+       y = "Male to Female Ratio") +
+  theme_minimal() +
+  theme(legend.position = "none")  
+
+ggplot(top_2021_ratio, aes(x = reorder(Area, M_to_F_Ratio), y = M_to_F_Ratio, fill = Area)) +
+  geom_col() +
+  coord_flip() +  # Flip coordinates to make it a horizontal bar plot
+  labs(title = "Top 20 Countries by Male to Female Ratio in 2021",
+       x = "Country",
+       y = "Male to Female Ratio") +
+  theme_minimal() +
+  theme(legend.position = "none")  
+```
+
+```{r}
+growth_rates_world <- data_summary_area |>
+  arrange(Area, Year) |>
+  group_by(Area) |>
+  mutate(Female_Growth_Rate = (Total_Female - lag(Total_Female)) / lag(Total_Female) * 100,
+    Male_Growth_Rate = (Total_Male - lag(Total_Male)) / lag(Total_Male) * 100)  |>
+  filter(!is.na(Female_Growth_Rate) & !is.na(Male_Growth_Rate),  # Filter out NA values
+    !is.infinite(Female_Growth_Rate) & !is.infinite(Male_Growth_Rate),  # Filter out Inf values
+    Year > 1950) 
+ 
+F_avg_growth_rates <- growth_rates_world |>
+  group_by(Area) |>
+  summarize(F_Average_Growth = mean(Female_Growth_Rate, na.rm = TRUE), .groups = 'drop')
+
+F_top_countries <- F_avg_growth_rates |>
+  arrange(desc(F_Average_Growth)) |>
+  slice_head(n = 10)
+
+M_avg_growth_rates <- growth_rates_world |>
+  group_by(Area) |>
+  summarize(M_Average_Growth = mean(Male_Growth_Rate, na.rm = TRUE), .groups = 'drop')
+
+M_top_countries <- M_avg_growth_rates |>
+  arrange(desc(M_Average_Growth)) |>
+  slice_head(n = 10)
+
+# Plotting average female growth rates
+ggplot(F_top_countries, aes(x = reorder(Area, F_Average_Growth), y = F_Average_Growth, fill = Area)) +
+  geom_col(show.legend = FALSE) +  # Use geom_col() for bar plot; no legend needed
+  coord_flip() +  # Flip the coordinates to make the country names easier to read
+  labs(title = "Top 10 Countries by Avg. Female Pop. Growth Rate (1951-2024)",
+       x = "Country",
+       y = "Average Growth Rate (%)") +
+  theme_minimal() +
+  scale_fill_hue()
+
+# Plotting average male growth rates
+ggplot(M_top_countries, aes(x = reorder(Area, M_Average_Growth), y = M_Average_Growth, fill = Area)) +
+  geom_col(show.legend = FALSE) +  # Use geom_col() for bar plot; no legend needed
+  coord_flip() +  # Flip the coordinates to make the country names easier to read
+  labs(title = "Top 10 Countries by Avg. Male Pop. Growth Rate (1951-2024)",
+       x = "Country",
+       y = "Average Growth Rate (%)") +
+  theme_minimal() +
+  scale_fill_viridis_d()
+```
+
